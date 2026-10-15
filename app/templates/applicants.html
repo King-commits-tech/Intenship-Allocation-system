@@ -1,0 +1,48 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty, score_ring, skills, csrf with context %}
+{% block title %}Applicants · {{ i.title }}{% endblock %}
+{% block page_title %}Ranked applicants{% endblock %}
+{% block content %}
+<a href="{{ url_for(base + '.internships') }}" class="small d-inline-block mb-3"><i class="bi bi-arrow-left"></i> Back to internships</a>
+<div class="card p-3 mb-3">
+  <div class="d-flex flex-wrap gap-3 align-items-center">
+    <div class="flex-grow-1"><div class="company">{{ i.company.company_name }}</div><h2 class="h5 mb-0">{{ i.title }}</h2>
+      <div class="meta mt-1"><span>{{ status_badge(i.status) }}</span><span><i class="bi bi-people"></i> {{ i.active_allocation_count() }}/{{ i.seats }} seats allocated</span><span><i class="bi bi-inboxes"></i> {{ i.applications|length }} applications</span></div></div>
+    <form method="get" class="d-flex gap-2 align-items-center"><label for="status" class="small text-muted">Status</label>
+      <select class="form-select form-select-sm" id="status" name="status" data-autosubmit><option value="">All</option>
+      {% for s in statuses %}<option value="{{ s }}" {{ 'selected' if request.args.get('status') == s }}>{{ s|title }}</option>{% endfor %}</select></form>
+  </div>
+</div>
+<p class="small text-muted">Ranking order: eligible first, then match score, CGPA and application time. Scores assist review; final decisions remain with people.</p>
+{% if rows %}
+<div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>#</th><th>Candidate</th><th>Score</th><th>Skills</th><th>Pref.</th><th>Status</th><th class="text-end">Review</th></tr></thead>
+  <tbody>
+  {% for a, r in rows %}
+  <tr>
+    <td>{{ loop.index }}</td>
+    <td><div class="fw-semibold">{{ a.student.user.name }}</div><div class="small text-muted">{{ a.student.department or '—' }} · Year {{ a.student.year_of_study or '—' }} · CGPA {{ a.student.cgpa or '—' }}</div>
+      {% if not r.eligible %}<span class="badge text-bg-danger">Not eligible</span>{% endif %}</td>
+    <td>{{ score_ring(r.total, 46) }}</td>
+    <td style="max-width:280px">{{ skills(r.matched_skills[:4], 'have') }}{{ skills(r.missing_required[:3], 'miss') }}</td>
+    <td>#{{ a.preference_rank }}</td>
+    <td>{{ status_badge(a.status) }}</td>
+    <td class="text-end text-nowrap">
+      {% set nexts = transitions.get(a.status, []) %}
+      {% if nexts %}
+      <form method="post" action="{{ url_for(base + '.application_status', aid=a.id) }}" class="d-inline-flex gap-1">
+        {{ csrf() }}
+        <label class="visually-hidden" for="st{{ a.id }}">New status for {{ a.student.user.name }}</label>
+        <select class="form-select form-select-sm" id="st{{ a.id }}" name="status" style="width:auto">{% for s in nexts|sort %}<option value="{{ s }}">{{ s|title }}</option>{% endfor %}</select>
+        <button class="btn btn-sm btn-primary" type="submit" data-no-loading>Set</button>
+      </form>
+      {% endif %}
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for(base + '.application_detail', aid=a.id) }}">Details</a>
+    </td>
+  </tr>
+  {% endfor %}
+  </tbody></table></div></div>
+{% else %}
+  <div class="card">{{ empty('bi-inbox', 'No applicants' + (' with this status' if request.args.get('status') else ' yet')) }}</div>
+{% endif %}
+{% endblock %}

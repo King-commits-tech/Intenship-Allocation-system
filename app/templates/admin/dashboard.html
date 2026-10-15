@@ -1,0 +1,37 @@
+{% extends "layout.html" %}
+{% block title %}Admin dashboard{% endblock %}
+{% block page_title %}Placement cell overview{% endblock %}
+{% block content %}
+{% if stats.pending_companies %}
+<div class="alert alert-warning d-flex align-items-center gap-2"><i class="bi bi-building-exclamation fs-5"></i>{{ stats.pending_companies }} compan{{ 'y' if stats.pending_companies == 1 else 'ies' }} awaiting verification. <a href="{{ url_for('admin.companies') }}" class="ms-auto">Review</a></div>
+{% endif %}
+<div class="row g-3 mb-3">
+  {% for icon, cls, value, label, link in [('bi-mortarboard', '', stats.students, 'Students', url_for('admin.students')), ('bi-buildings', 'ink', stats.companies, 'Companies', url_for('admin.companies')), ('bi-briefcase', 'teal', stats.internships ~ ' / ' ~ stats.seats, 'Live internships / seats', url_for('admin.internships')), ('bi-inboxes', 'coral', stats.applications, 'Applications', url_for('admin.applications')), ('bi-award', 'teal', stats.allocations, 'Active allocations', url_for('admin.allocation'))] %}
+  <div class="col-6 col-md-4 col-xl"><a href="{{ link }}" class="text-decoration-none"><div class="card stat-card"><div class="icon {{ cls }}"><i class="bi {{ icon }}"></i></div><div><div class="value">{{ value }}</div><div class="label">{{ label }}</div></div></div></a></div>
+  {% endfor %}
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header">Internship availability by domain</div><div class="card-body"><div class="chart-box"><canvas id="chartDomain" aria-label="Internships by domain"></canvas></div></div></div></div>
+  <div class="col-lg-3"><div class="card h-100"><div class="card-header">Application status</div><div class="card-body"><div class="chart-box"><canvas id="chartStatus" aria-label="Application status"></canvas></div></div></div></div>
+  <div class="col-lg-3"><div class="card h-100"><div class="card-header">Match score distribution</div><div class="card-body"><div class="chart-box"><canvas id="chartScores" aria-label="Score distribution"></canvas></div></div></div></div>
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header">Allocation status by internship</div><div class="card-body"><div class="chart-box" style="height:320px"><canvas id="chartAlloc" aria-label="Allocation by internship"></canvas></div></div></div></div>
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header">Skill demand vs student supply</div><div class="card-body"><div class="chart-box" style="height:320px"><canvas id="chartSkills" aria-label="Skill demand"></canvas></div></div></div></div>
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header">Applications — last 14 days</div><div class="card-body"><div class="chart-box"><canvas id="chartTimeline" aria-label="Applications timeline"></canvas></div></div></div></div>
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header d-flex justify-content-between">Recent allocation runs <a class="small fw-normal" href="{{ url_for('admin.allocation') }}">Allocation centre</a></div>
+    <div class="list-group list-group-flush">
+      {% for r in runs %}<a class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" href="{{ url_for('admin.run_detail', rid=r.id) }}"><span>Run #{{ r.id }} <span class="small text-muted">{{ r.created_at|dt }}</span></span><span>{{ r.summary.get('proposed_allocations', 0) }} proposed · {{ status_badge(r.status) }}</span></a>
+      {% else %}<div class="p-3 small text-muted">No allocation runs yet.</div>{% endfor %}
+    </div>
+    <div class="card-header border-top">Recent activity</div>
+    <div class="list-group list-group-flush small">
+      {% for l in logs %}<div class="list-group-item"><code>{{ l.action }}</code> {{ l.details or '' }} <span class="text-muted">— {{ l.user.name if l.user else 'system' }}, {{ l.created_at|dt }}</span></div>
+      {% else %}<div class="p-3 text-muted">No activity yet.</div>{% endfor %}
+    </div>
+  </div></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>loadAdminCharts();</script>
+{% endblock %}

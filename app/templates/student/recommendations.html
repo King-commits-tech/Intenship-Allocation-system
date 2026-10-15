@@ -1,0 +1,39 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty, score_ring, explanation, component_bars with context %}
+{% block title %}Recommendations{% endblock %}
+{% block page_title %}Personalised recommendations{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <p class="small text-muted mb-0 flex-grow-1">Ranked by match score using your skills, projects, interests and academics. Each card explains the score.</p>
+  <div class="btn-group" role="group" aria-label="Show">
+    <a href="{{ url_for('student.recommendations') }}" class="btn btn-sm {{ 'btn-primary' if not show_all else 'btn-outline-primary' }}">Eligible only</a>
+    <a href="{{ url_for('student.recommendations', all=1) }}" class="btn btn-sm {{ 'btn-primary' if show_all else 'btn-outline-primary' }}">Include ineligible</a>
+  </div>
+</div>
+{% if recs %}
+<div class="vstack gap-3">
+  {% for i, r in recs %}
+  <div class="card p-3">
+    <div class="row g-3">
+      <div class="col-md-5">
+        <div class="d-flex gap-3">
+          <div class="text-center"><div class="small text-muted mb-1">#{{ loop.index }}</div>{{ score_ring(r.total, 64) }}</div>
+          <div class="min-w-0">
+            <div class="company">{{ i.company.company_name }}</div>
+            <a class="fw-bold" href="{{ url_for('student.internship_detail', iid=i.id) }}">{{ i.title }}</a>
+            <div class="meta mt-1"><span><i class="bi bi-tag"></i> {{ i.domain }}</span><span><i class="bi bi-geo-alt"></i> {{ i.location or i.work_mode }}</span><span><i class="bi bi-cash"></i> {{ i.stipend|inr }}</span></div>
+            <div class="mt-2">{% if i.id in applied %}{{ status_badge(applied[i.id].status) }}{% else %}<a class="btn btn-sm btn-accent" href="{{ url_for('student.internship_detail', iid=i.id) }}">View & apply</a>{% endif %}</div>
+          </div>
+        </div>
+        <div class="mt-3">{{ component_bars(r.components, r.weights) }}</div>
+      </div>
+      <div class="col-md-7 border-start-md">{{ explanation(r) }}</div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+  <div class="card">{{ empty('bi-stars', 'No recommendations available', 'Either no internships are open right now, or you are not eligible for the open ones. Try "Include ineligible" or complete your profile.', url_for('student.profile'), 'Complete profile') }}</div>
+{% endif %}
+<p class="disclaimer mt-3">Recommendations are generated locally by an explainable content-based model (no trained predictor, no external AI service). They assist your decision and do not guarantee selection.</p>
+{% endblock %}

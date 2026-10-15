@@ -1,0 +1,49 @@
+# Usage:  cp .env.example .env   (then set SECRET_KEY, MYSQL_PASSWORD, MYSQL_ROOT_PASSWORD)
+#         docker compose up --build
+# App: http://localhost:5000
+services:
+  db:
+    image: mysql:8.0
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-internship_db}
+      MYSQL_USER: ${MYSQL_USER:-internship}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+    command: ["--character-set-server=utf8mb4", "--collation-server=utf8mb4_unicode_ci"]
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 20s
+
+  web:
+    build: .
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      FLASK_CONFIG: production
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in .env}
+      DB_ENGINE: mysql
+      MYSQL_HOST: db
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-internship_db}
+      MYSQL_USER: ${MYSQL_USER:-internship}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      # Plain HTTP on localhost: allow the session cookie without HTTPS. Set true behind HTTPS.
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      SEED_DEMO: ${SEED_DEMO:-1}
+      MAX_RESUME_MB: ${MAX_RESUME_MB:-2}
+    ports:
+      - "${PORT:-5000}:5000"
+    volumes:
+      - uploads:/app/instance/uploads
+
+volumes:
+  mysql_data:
+  uploads:

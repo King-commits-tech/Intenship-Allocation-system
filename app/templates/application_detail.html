@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import score_ring, skills, csrf, explanation, component_bars, post_button with context %}
+{% block title %}Application · {{ a.student.user.name }}{% endblock %}
+{% block page_title %}Application review{% endblock %}
+{% block content %}
+{% set s = a.student %}
+<a href="{{ url_for(base + '.applicants', iid=a.internship_id) }}" class="small d-inline-block mb-3"><i class="bi bi-arrow-left"></i> All applicants for {{ a.internship.title }}</a>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card p-4 mb-3">
+      <div class="d-flex gap-3 align-items-center mb-3">
+        <span class="avatar" style="width:52px;height:52px;font-size:1.2rem">{{ s.user.name[:1] }}</span>
+        <div><h2 class="h5 mb-0">{{ s.user.name }}</h2><div class="small text-muted">{{ s.user.email }}{% if s.phone %} · {{ s.phone }}{% endif %}</div></div>
+        <div class="ms-auto">{{ status_badge(a.status) }}</div>
+      </div>
+      <div class="row small g-2 mb-3">
+        <div class="col-6 col-md-3"><div class="text-muted">Degree</div>{{ s.degree or '—' }}</div>
+        <div class="col-6 col-md-3"><div class="text-muted">Department</div>{{ s.department or '—' }}</div>
+        <div class="col-6 col-md-3"><div class="text-muted">Year</div>{{ s.year_of_study or '—' }}</div>
+        <div class="col-6 col-md-3"><div class="text-muted">CGPA</div>{{ s.cgpa or '—' }}</div>
+      </div>
+      <h3 class="h6">Skills</h3><div class="mb-3">{{ skills(s.skill_names) or '—' }}</div>
+      <h3 class="h6">Projects</h3><p class="small" style="white-space:pre-line">{{ s.projects or '—' }}</p>
+      {% if s.experience %}<h3 class="h6">Experience</h3><p class="small" style="white-space:pre-line">{{ s.experience }}</p>{% endif %}
+      {% if s.certifications %}<h3 class="h6">Certifications</h3><p class="small">{{ s.certifications }}</p>{% endif %}
+      <h3 class="h6">Interests</h3><p class="small">{{ s.interests or '—' }} {% if s.preferred_domain %}· prefers {{ s.preferred_domain }}{% endif %}</p>
+      {% if a.cover_note %}<h3 class="h6">Note from candidate</h3><blockquote class="small border-start ps-3 text-muted">{{ a.cover_note }}</blockquote>{% endif %}
+      {% if s.resume %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.resume', student_id=s.id) }}" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf me-1"></i>View resume</a>{% else %}<span class="small text-muted">No resume uploaded.</span>{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card p-4 mb-3">
+      <div class="d-flex align-items-center gap-3 mb-3">{{ score_ring(r.total, 80) }}<div><div class="section-title">Match for</div><div class="fw-bold">{{ a.internship.title }}</div><div class="small text-muted">Preference #{{ a.preference_rank }} for this student</div></div></div>
+      {{ component_bars(r.components, r.weights) }}<hr>{{ explanation(r) }}
+    </div>
+    <div class="card p-4">
+      <h3 class="h6">Update status</h3>
+      {% set nexts = transitions.get(a.status, []) %}
+      {% if nexts %}
+      <form method="post" action="{{ url_for(base + '.application_status', aid=a.id) }}" class="vstack gap-2">
+        {{ csrf() }}
+        <label class="form-label small mb-0" for="status">New status</label>
+        <select class="form-select" id="status" name="status">{% for st in nexts|sort %}<option value="{{ st }}">{{ st|title }}</option>{% endfor %}</select>
+        <label class="form-label small mb-0" for="note">Note to candidate (optional)</label>
+        <input class="form-control" id="note" name="note" maxlength="255">
+        <button class="btn btn-primary" type="submit">Update status</button>
+      </form>
+      {% else %}<p class="small text-muted mb-0">No further status changes are available ({{ a.status }}). Allocation is handled by the placement cell.</p>{% endif %}
+      {% if base == 'admin' and a.status != 'allocated' %}
+        <hr>{{ post_button(url_for('admin.delete_application', aid=a.id), 'Delete application', 'btn btn-sm btn-outline-danger', confirm='Permanently delete this application (e.g. a duplicate or invalid entry)?') }}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

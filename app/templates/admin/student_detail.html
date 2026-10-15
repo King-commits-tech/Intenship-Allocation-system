@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import skills, score_ring, csrf, post_button with context %}
+{% block title %}{{ p.user.name }}{% endblock %}
+{% block page_title %}Student profile{% endblock %}
+{% block content %}
+<a href="{{ url_for('admin.students') }}" class="small d-inline-block mb-3"><i class="bi bi-arrow-left"></i> Students</a>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card p-4 mb-3">
+      <div class="d-flex gap-3 align-items-center mb-3"><span class="avatar" style="width:52px;height:52px;font-size:1.2rem">{{ p.user.name[:1] }}</span>
+        <div><h2 class="h5 mb-0">{{ p.user.name }}</h2><div class="small text-muted">{{ p.user.email }} · {{ p.roll_number or 'no roll no.' }} · last login {{ p.user.last_login_at|dt }}</div></div>
+        <div class="ms-auto">{{ post_button(url_for('admin.toggle_user', uid=p.user.id), 'Disable account' if p.user.is_active else 'Enable account', 'btn btn-sm btn-outline-secondary') }}</div></div>
+      <div class="row small g-2 mb-3">
+        {% for l, v in [('Degree', p.degree), ('Department', p.department), ('Year', p.year_of_study), ('CGPA', p.cgpa), ('Percentage', p.percentage), ('Preferred domain', p.preferred_domain), ('Location', p.preferred_location), ('Profile', p.completion_percent() ~ '%')] %}
+        <div class="col-6 col-md-3"><div class="text-muted">{{ l }}</div>{{ v if v not in (none, '') else '—' }}</div>{% endfor %}
+      </div>
+      <h3 class="h6">Skills</h3><div class="mb-2">{{ skills(p.skill_names) or '—' }}</div>
+      <h3 class="h6">Projects</h3><p class="small" style="white-space:pre-line">{{ p.projects or '—' }}</p>
+      {% if p.resume %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.resume', student_id=p.id) }}" target="_blank" rel="noopener"><i class="bi bi-file-earmark-pdf me-1"></i>Resume</a> <span class="small text-muted">{{ p.resume.extraction_message }}</span>{% endif %}
+    </div>
+    <div class="card mb-3"><div class="card-header">Applications</div>
+      <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Internship</th><th>Pref.</th><th>Status</th><th></th></tr></thead><tbody>
+      {% for a in p.applications|sort(attribute='preference_rank') %}<tr><td>{{ a.internship.title }}<div class="small text-muted">{{ a.internship.company.company_name }}</div></td><td>#{{ a.preference_rank }}</td><td>{{ status_badge(a.status) }}</td><td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.application_detail', aid=a.id) }}">Review</a></td></tr>
+      {% else %}<tr><td colspan="4" class="text-muted small">No applications.</td></tr>{% endfor %}</tbody></table></div></div>
+    <div class="card"><div class="card-header">Allocations</div>
+      <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Internship</th><th>Score</th><th>Status</th><th>Source</th><th></th></tr></thead><tbody>
+      {% for a in allocs if a.status in ['active', 'cancelled'] %}<tr><td>{{ a.internship.title }}</td><td>{{ a.score }}</td><td>{{ status_badge(a.status) }}</td><td class="small">{{ 'Run #' ~ a.run_id if a.run_id else 'Manual' }}</td>
+        <td class="text-end">{% if a.status == 'active' %}<form method="post" action="{{ url_for('admin.cancel_allocation', alloc_id=a.id) }}" class="d-inline-flex gap-1" data-confirm="Cancel this allocation? The student will be notified.">{{ csrf() }}<input class="form-control form-control-sm" name="reason" placeholder="Reason" aria-label="Reason" maxlength="200"><button class="btn btn-sm btn-outline-danger" type="submit">Cancel</button></form>{% endif %}</td></tr>
+      {% else %}<tr><td colspan="5" class="text-muted small">No allocations.</td></tr>{% endfor %}</tbody></table></div>
+      <div class="card-body border-top">
+        <form method="post" action="{{ url_for('admin.manual_allocation') }}" class="row g-2 align-items-end" data-confirm="Allocate this student manually? Seat limits and allocation limits are still enforced.">
+          {{ csrf() }}<input type="hidden" name="student_id" value="{{ p.id }}">
+          <div class="col-md-6"><label class="form-label small" for="internship_id">Manual allocation / reassignment</label>
+            <select class="form-select form-select-sm" id="internship_id" name="internship_id" required><option value="">Choose internship…</option>{% for i in internships %}<option value="{{ i.id }}">{{ i.title }} — {{ i.company.company_name }} ({{ i.seats_left() }} left)</option>{% endfor %}</select></div>
+          <div class="col-md-4"><label class="form-label small" for="note">Note</label><input class="form-control form-control-sm" id="note" name="note" maxlength="200"></div>
+          <div class="col-md-2"><button class="btn btn-sm btn-primary w-100" type="submit">Allocate</button></div>
+        </form>
+      </div>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card"><div class="card-header">Top eligible matches</div>
+      <div class="list-group list-group-flush">
+      {% for i, r in recs %}<div class="list-group-item d-flex gap-3 align-items-center">{{ score_ring(r.total, 44) }}<div class="min-w-0"><div class="fw-semibold text-truncate">{{ i.title }}</div><div class="small text-muted">{{ i.company.company_name }} · {{ r.summary }}</div></div></div>
+      {% else %}<div class="p-3 small text-muted">No eligible open internships.</div>{% endfor %}
+      </div></div>
+  </div>
+</div>
+{% endblock %}

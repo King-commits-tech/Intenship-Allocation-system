@@ -1,0 +1,70 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import score_ring, skills, explanation, component_bars, csrf with context %}
+{% block title %}{{ i.title }}{% endblock %}
+{% block page_title %}Internship details{% endblock %}
+{% block content %}
+<a href="{{ url_for('student.internships') }}" class="small d-inline-block mb-3"><i class="bi bi-arrow-left"></i> Back to internships</a>
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card p-4 mb-3">
+      <div class="company">{{ i.company.company_name }}{% if i.company.industry %} · {{ i.company.industry }}{% endif %}</div>
+      <h2 class="h3 mb-2">{{ i.title }}</h2>
+      <div class="mb-3">{{ status_badge(i.status) }}{% if not i.is_open and i.status == 'published' %} <span class="badge text-bg-dark">Deadline passed</span>{% endif %}</div>
+      <div class="meta mb-3">
+        <span><i class="bi bi-tag"></i> {{ i.domain }}</span>
+        <span><i class="bi bi-geo-alt"></i> {{ i.location ~ ' · ' if i.location and i.location != i.work_mode }}{{ i.work_mode }}</span>
+        <span><i class="bi bi-cash"></i> {{ i.stipend|inr }}</span>
+        <span><i class="bi bi-hourglass-split"></i> {{ i.duration_weeks }} weeks</span>
+        <span><i class="bi bi-people"></i> {{ i.seats_left() }} of {{ i.seats }} seats left</span>
+        <span><i class="bi bi-calendar-event"></i> Deadline {{ i.deadline|d }}</span>
+      </div>
+      <h3 class="h6">About the internship</h3>
+      <p style="white-space: pre-line">{{ i.description }}</p>
+      <h3 class="h6">Required skills</h3><div class="mb-2">{{ skills(i.required_skills) or '—' }}</div>
+      {% if i.preferred_skills %}<h3 class="h6">Nice to have</h3><div class="mb-2">{{ skills(i.preferred_skills, 'pref') }}</div>{% endif %}
+      <h3 class="h6 mt-2">Eligibility</h3>
+      <ul class="small mb-0">
+        <li>Minimum CGPA: {{ i.min_cgpa if i.min_cgpa is not none else 'No minimum' }}</li>
+        <li>Departments: {{ i.department_list|join(', ') or 'All' }}</li>
+        <li>Year of study: {{ i.year_list|join(', ') or 'All' }}</li>
+      </ul>
+      {% if i.company.description %}<hr><h3 class="h6">About {{ i.company.company_name }}</h3><p class="small text-muted mb-0">{{ i.company.description }}</p>{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card p-4 mb-3">
+      <div class="d-flex align-items-center gap-3 mb-3">
+        {{ score_ring(r.total, 84) }}
+        <div><div class="section-title">Your match</div><div class="h5 mb-0">{{ r.summary if r.eligible else 'Not eligible' }}</div></div>
+      </div>
+      {{ component_bars(r.components, r.weights) }}
+      <hr>
+      {{ explanation(r) }}
+    </div>
+    <div class="card p-4">
+      {% if application %}
+        <h3 class="h6">Your application</h3>
+        <p class="mb-2">Status: {{ status_badge(application.status) }} · preference #{{ application.preference_rank }}</p>
+        <a href="{{ url_for('student.applications') }}" class="btn btn-outline-primary btn-sm">Track applications</a>
+      {% elif not i.is_open %}
+        <p class="mb-0 text-muted">This internship is not accepting applications.</p>
+      {% elif not r.eligible %}
+        <p class="mb-0 text-muted"><i class="bi bi-lock me-1"></i>You can't apply because you don't meet the hard eligibility criteria above. Update your profile if this is out of date.</p>
+      {% else %}
+        <h3 class="h6">Apply</h3>
+        <form method="post" action="{{ url_for('student.apply', iid=i.id) }}" class="needs-validation" novalidate
+              data-confirm="Submit your application for {{ i.title }}? Your profile and resume will be shared with {{ i.company.company_name }}.">
+          {{ csrf() }}
+          <div class="mb-2"><label class="form-label" for="preference_rank">Preference rank</label>
+            <input type="number" class="form-control" id="preference_rank" name="preference_rank" min="1" max="50" value="{{ next_rank }}" required aria-describedby="prefHelp">
+            <div id="prefHelp" class="form-text">1 = your top choice. The allocation process tries to give you your highest-ranked internship.</div></div>
+          <div class="mb-3"><label class="form-label" for="cover_note">Short note (optional)</label>
+            <textarea class="form-control" id="cover_note" name="cover_note" rows="3" maxlength="2000" placeholder="Why are you interested?"></textarea></div>
+          <button class="btn btn-accent w-100" type="submit" data-loading-text="Submitting…"><i class="bi bi-send me-1"></i>Submit application</button>
+        </form>
+      {% endif %}
+      <p class="disclaimer mt-3 mb-0">The score helps you prioritise; it does not guarantee selection.</p>
+    </div>
+  </div>
+</div>
+{% endblock %}

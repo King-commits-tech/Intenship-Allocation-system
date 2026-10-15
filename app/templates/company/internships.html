@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty, post_button with context %}
+{% block title %}Internships{% endblock %}
+{% block page_title %}Your internships{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap gap-2 mb-3 align-items-center">
+  <div class="btn-group" role="group" aria-label="Filter by status">
+    <a href="{{ url_for('company.internships') }}" class="btn btn-sm {{ 'btn-primary' if not request.args.get('status') else 'btn-outline-primary' }}">All</a>
+    {% for s in ['draft', 'published', 'closed'] %}<a href="{{ url_for('company.internships', status=s) }}" class="btn btn-sm {{ 'btn-primary' if request.args.get('status') == s else 'btn-outline-primary' }}">{{ s|title }}</a>{% endfor %}
+  </div>
+  <a class="btn btn-primary btn-sm ms-auto" href="{{ url_for('company.new_internship') }}"><i class="bi bi-plus-lg me-1"></i>New internship</a>
+</div>
+{% if items %}
+<div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>Internship</th><th>Status</th><th>Seats</th><th>Applications</th><th>Deadline</th><th class="text-end">Actions</th></tr></thead>
+  <tbody>
+  {% for i in items %}
+    <tr>
+      <td><div class="fw-semibold">{{ i.title }}</div><div class="small text-muted">{{ i.domain }} · {{ i.work_mode }}</div></td>
+      <td>{{ status_badge(i.status) }}</td>
+      <td>{{ i.active_allocation_count() }}/{{ i.seats }}</td>
+      <td>{{ i.applications|length }}</td>
+      <td class="small">{{ i.deadline|d }}</td>
+      <td class="text-end text-nowrap">
+        <a class="btn btn-sm btn-outline-primary" href="{{ url_for('company.applicants', iid=i.id) }}"><i class="bi bi-people me-1"></i>Applicants</a>
+        <a class="btn btn-sm btn-light" href="{{ url_for('company.edit_internship', iid=i.id) }}" title="Edit" aria-label="Edit {{ i.title }}"><i class="bi bi-pencil"></i></a>
+        {% if i.status != 'published' %}{{ post_button(url_for('company.set_internship_status', iid=i.id), 'Publish', 'btn btn-sm btn-success', fields={'status': 'published'}) }}{% endif %}
+        {% if i.status == 'published' %}{{ post_button(url_for('company.set_internship_status', iid=i.id), 'Close', 'btn btn-sm btn-outline-dark', confirm='Close this internship to new applications?', fields={'status': 'closed'}) }}{% endif %}
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody></table></div></div>
+{% else %}
+  <div class="card">{{ empty('bi-briefcase', 'No internships here', 'Create your first internship posting with required skills and seats.', url_for('company.new_internship'), 'New internship') }}</div>
+{% endif %}
+{% endblock %}

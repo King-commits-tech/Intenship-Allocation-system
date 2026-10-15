@@ -1,0 +1,20 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty with context %}
+{% block title %}Assigned candidates{% endblock %}
+{% block page_title %}Assigned candidates{% endblock %}
+{% block content %}
+<p class="small text-muted">Candidates allocated to your internships after the placement cell confirmed an allocation run (or allocated them manually).</p>
+{% if allocs %}
+<div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>Internship</th><th>Candidate</th><th>Department / CGPA</th><th>Score</th><th>Allocated</th><th></th></tr></thead>
+  <tbody>{% for a in allocs %}<tr>
+    <td>{{ a.internship.title }}</td>
+    <td><div class="fw-semibold">{{ a.student.user.name }}</div><div class="small text-muted">{{ a.student.user.email }}</div></td>
+    <td class="small">{{ a.student.department or '—' }} · {{ a.student.cgpa or '—' }}</td>
+    <td>{{ a.score }}</td><td class="small">{{ a.created_at|dt }}</td>
+    <td class="text-end">{% if a.application_id %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('company.application_detail', aid=a.application_id) }}">Profile</a>{% endif %}</td>
+  </tr>{% endfor %}</tbody></table></div></div>
+{% else %}
+  <div class="card">{{ empty('bi-people', 'No allocated candidates yet', 'Once the college confirms an allocation run, assigned candidates appear here.') }}</div>
+{% endif %}
+{% endblock %}

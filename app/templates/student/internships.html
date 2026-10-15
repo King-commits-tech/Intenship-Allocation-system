@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty, pager with context %}
+{% block title %}Browse internships{% endblock %}
+{% block page_title %}Browse internships{% endblock %}
+{% block content %}
+<form class="card p-3 mb-3" method="get" role="search" aria-label="Filter internships">
+  <div class="row g-2 align-items-end">
+    <div class="col-lg-4"><label class="form-label small" for="q">Search</label>
+      <input class="form-control" id="q" name="q" value="{{ request.args.get('q', '') }}" placeholder="Title, keyword or city"></div>
+    <div class="col-6 col-lg-2"><label class="form-label small" for="domain">Domain</label>
+      <select class="form-select" id="domain" name="domain" data-autosubmit><option value="">All domains</option>
+        {% for d in domains %}<option {{ 'selected' if request.args.get('domain') == d }}>{{ d }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-lg-2"><label class="form-label small" for="mode">Work mode</label>
+      <select class="form-select" id="mode" name="mode" data-autosubmit><option value="">Any</option>
+        {% for m in modes %}<option {{ 'selected' if request.args.get('mode') == m }}>{{ m }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-lg-2"><label class="form-label small" for="sort">Sort by</label>
+      <select class="form-select" id="sort" name="sort" data-autosubmit>
+        {% for v, l in [('match', 'Best match'), ('newest', 'Newest'), ('deadline', 'Deadline'), ('stipend', 'Stipend')] %}<option value="{{ v }}" {{ 'selected' if request.args.get('sort', 'match') == v }}>{{ l }}</option>{% endfor %}</select></div>
+    <div class="col-6 col-lg-2 d-flex gap-2"><button class="btn btn-primary flex-grow-1" type="submit" data-no-loading><i class="bi bi-search"></i> Search</button>
+      <a class="btn btn-light" href="{{ url_for('student.internships') }}" title="Clear filters" aria-label="Clear filters"><i class="bi bi-x-lg"></i></a></div>
+  </div>
+  <div class="d-flex flex-wrap gap-3 mt-2 small">
+    <div class="form-check"><input class="form-check-input" type="checkbox" id="eligible" name="eligible" value="1" {{ 'checked' if request.args.get('eligible') == '1' }} data-autosubmit><label class="form-check-label" for="eligible">Only internships I'm eligible for</label></div>
+    <div class="form-check"><input class="form-check-input" type="checkbox" id="paid" name="paid" value="1" {{ 'checked' if request.args.get('paid') == '1' }} data-autosubmit><label class="form-check-label" for="paid">Paid only</label></div>
+  </div>
+</form>
+<p class="small text-muted">{{ total }} open internship{{ '' if total == 1 else 's' }} found.</p>
+{% if rows %}
+  <div class="row g-3">
+    {% for i, r in rows %}<div class="col-md-6 col-xl-4">{% include "partials/internship_card.html" %}</div>{% endfor %}
+  </div>
+  {{ pager(page, pages) }}
+{% else %}
+  <div class="card">{{ empty('bi-search', 'No internships match your filters', 'Try clearing filters or check back later.', url_for('student.internships'), 'Clear filters') }}</div>
+{% endif %}
+{% endblock %}

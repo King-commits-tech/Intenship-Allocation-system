@@ -1,0 +1,53 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import csrf, empty, post_button with context %}
+{% block title %}Allocation run #{{ run.id }}{% endblock %}
+{% block page_title %}Allocation run #{{ run.id }}{% endblock %}
+{% block content %}
+{% set s = run.summary %}
+<a href="{{ url_for('admin.allocation') }}" class="small d-inline-block mb-3"><i class="bi bi-arrow-left"></i> Allocation centre</a>
+<div class="card p-3 mb-3">
+  <div class="d-flex flex-wrap gap-3 align-items-center">
+    <div>{{ status_badge(run.status) }} <span class="small text-muted ms-2">Created {{ run.created_at|dt }} by {{ run.created_by.name if run.created_by else '—' }}{% if run.confirmed_at %} · confirmed {{ run.confirmed_at|dt }}{% endif %}</span>
+      <div class="small text-muted mt-1">Policy: {{ run.policy }} · min score {{ run.params.get('min_match_score') }} · max per student {{ run.params.get('max_allocations_per_student') }} · statuses {{ run.params.get('statuses', [])|join(', ') }}</div></div>
+    <div class="ms-auto d-flex gap-2">
+      <a class="btn btn-outline-secondary btn-sm" href="{{ url_for('admin.run_report', rid=run.id) }}"><i class="bi bi-download me-1"></i>Report (CSV)</a>
+      {% if run.status == 'preview' %}
+        {{ post_button(url_for('admin.run_discard', rid=run.id), 'Discard', 'btn btn-outline-danger btn-sm', confirm='Discard this preview?') }}
+        {{ post_button(url_for('admin.run_confirm', rid=run.id), 'Confirm allocation', 'btn btn-success btn-sm', confirm='Confirm this allocation? Students and companies will be notified and seats will be filled.', icon='bi-check2-circle') }}
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% if run.status == 'preview' %}<div class="alert alert-warning small"><i class="bi bi-eye me-1"></i>This is a <strong>preview</strong>. No one has been notified and no seats are taken until you confirm. Confirmation re-checks seats and limits in a single transaction.</div>{% endif %}
+<div class="row g-3 mb-3">
+  {% for label, value in [('Applications considered', s.get('applications_considered', 0)), ('Eligible candidates', s.get('eligible_candidates', 0)), ('Proposed allocations', s.get('proposed_allocations', 0)), ('Students unallocated', s.get('students_unallocated', 0)), ('Average score', s.get('average_score', 0))] %}
+  <div class="col-6 col-lg"><div class="card stat-card"><div><div class="value">{{ value }}</div><div class="label">{{ label }}</div></div></div></div>
+  {% endfor %}
+</div>
+{% if s.get('confirmed') is not none %}<p class="small">Confirmed: <strong>{{ s.confirmed }}</strong>; skipped at confirmation (data changed since preview): <strong>{{ s.get('skipped_at_confirmation', 0) }}</strong>.</p>{% endif %}
+
+<div class="row g-3">
+  <div class="col-xl-8">
+    <div class="card"><div class="card-header">Allocations</div>
+    {% if allocs %}
+      <div class="table-responsive"><table class="table align-middle mb-0">
+        <thead><tr><th>Internship</th><th>Student</th><th>Score</th><th>Note</th><th>Status</th></tr></thead>
+        <tbody>{% for a in allocs %}<tr><td>{{ a.internship.title }}<div class="small text-muted">{{ a.internship.company.company_name }}</div></td>
+          <td><a href="{{ url_for('admin.student_detail', sid=a.student_id) }}">{{ a.student.user.name }}</a><div class="small text-muted">CGPA {{ a.student.cgpa or '—' }}</div></td>
+          <td class="fw-bold">{{ a.score }}</td><td class="small">{{ a.note or '' }}</td><td>{{ status_badge(a.status) }}</td></tr>{% endfor %}</tbody></table></div>
+    {% else %}{{ empty('bi-diagram-3', 'No allocations proposed', 'No eligible candidates met the criteria, or all seats are already filled.') }}{% endif %}
+    </div>
+  </div>
+  <div class="col-xl-4">
+    <div class="card mb-3"><div class="card-header">Seat usage</div>
+      <ul class="list-group list-group-flush small">
+      {% for i in s.get('internships', []) %}<li class="list-group-item"><div class="d-flex justify-content-between"><span class="text-truncate me-2">{{ i.title }}</span><span>{{ i.already_allocated }} + {{ i.proposed }} / {{ i.seats }}</span></div>
+        <div class="bar mt-1"><div style="width: {{ [100, ((i.already_allocated + i.proposed) / i.seats * 100) if i.seats else 0]|min }}%"></div></div></li>
+      {% else %}<li class="list-group-item text-muted">No data.</li>{% endfor %}</ul></div>
+    <div class="card"><div class="card-header">Not allocated</div>
+      <ul class="list-group list-group-flush small">
+      {% for u in s.get('unallocated', []) %}{% set st = students.get(u.student_id) %}<li class="list-group-item"><strong>{{ st.user.name if st else 'Student #' ~ u.student_id }}</strong><div class="text-muted">{{ u.reason }}</div></li>
+      {% else %}<li class="list-group-item text-muted">Everyone in the pool was allocated.</li>{% endfor %}</ul></div>
+  </div>
+</div>
+{% endblock %}

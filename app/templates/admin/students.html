@@ -1,0 +1,27 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty, pager, post_button with context %}
+{% block title %}Students{% endblock %}
+{% block page_title %}Students{% endblock %}
+{% block content %}
+<form class="card p-3 mb-3 d-flex flex-row flex-wrap gap-2 align-items-end" method="get" role="search">
+  <div class="flex-grow-1"><label class="form-label small" for="q">Search</label><input class="form-control" id="q" name="q" value="{{ request.args.get('q', '') }}" placeholder="Name, email, roll number"></div>
+  <div><label class="form-label small" for="department">Department</label><select class="form-select" id="department" name="department" data-autosubmit><option value="">All</option>{% for d in departments %}<option {{ 'selected' if request.args.get('department') == d }}>{{ d }}</option>{% endfor %}</select></div>
+  <button class="btn btn-primary" type="submit" data-no-loading>Search</button>
+  <a class="btn btn-outline-secondary" href="{{ url_for('admin.report_csv', name='students') }}"><i class="bi bi-download me-1"></i>CSV</a>
+</form>
+{% if pagination.items %}
+<div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>Student</th><th>Department</th><th>CGPA</th><th>Profile</th><th>Apps</th><th>Account</th><th class="text-end">Actions</th></tr></thead>
+  <tbody>{% for s in pagination.items %}{% set pct = s.completion_percent() %}<tr>
+    <td><a class="fw-semibold" href="{{ url_for('admin.student_detail', sid=s.id) }}">{{ s.user.name }}</a><div class="small text-muted">{{ s.user.email }}{% if s.roll_number %} · {{ s.roll_number }}{% endif %}</div></td>
+    <td class="small">{{ s.department or '—' }}{% if s.year_of_study %}, Y{{ s.year_of_study }}{% endif %}</td>
+    <td>{{ s.cgpa or '—' }}</td>
+    <td style="min-width:110px"><div class="progress" role="progressbar" aria-label="Profile completion" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width:{{ pct }}%"></div></div><span class="small text-muted">{{ pct }}%</span></td>
+    <td>{{ s.applications|length }}</td>
+    <td>{% if s.user.is_active %}<span class="badge text-bg-success">Active</span>{% else %}<span class="badge text-bg-secondary">Disabled</span>{% endif %}</td>
+    <td class="text-end text-nowrap"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.student_detail', sid=s.id) }}">View</a>
+      {{ post_button(url_for('admin.toggle_user', uid=s.user.id), 'Disable' if s.user.is_active else 'Enable', 'btn btn-sm btn-light', confirm=('Disable ' ~ s.user.name ~ '? They will not be able to log in.') if s.user.is_active else None) }}</td>
+  </tr>{% endfor %}</tbody></table></div></div>
+{{ pager(pagination.page, pagination.pages) }}
+{% else %}<div class="card">{{ empty('bi-mortarboard', 'No students found', 'Students appear here once they register.') }}</div>{% endif %}
+{% endblock %}

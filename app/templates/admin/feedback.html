@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty with context %}
+{% block title %}Feedback{% endblock %}
+{% block page_title %}Internship feedback{% endblock %}
+{% block content %}
+{% if items %}
+<p class="small text-muted">{{ items|length }} response(s) · average overall rating <strong>{{ avg }}</strong> / 5. Feedback is stored for future improvements; it is not yet used to train the matching model.</p>
+<div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>Student</th><th>Internship</th><th>Overall</th><th>Learning</th><th>Comments</th><th>Date</th></tr></thead>
+  <tbody>{% for f in items %}<tr><td>{{ f.student.user.name }}</td><td>{{ f.internship.title }}<div class="small text-muted">{{ f.internship.company.company_name }}</div></td>
+    <td>{{ '★' * f.rating }}</td><td>{{ ('★' * f.learning_rating) if f.learning_rating else '—' }}</td><td class="small">{{ f.comments or '' }}</td><td class="small">{{ f.created_at|dt }}</td></tr>{% endfor %}</tbody></table></div></div>
+{% else %}<div class="card">{{ empty('bi-chat-square-heart', 'No feedback yet', 'Allocated students can submit feedback from their Allocation page.') }}</div>{% endif %}
+{% endblock %}

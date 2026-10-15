@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block title %}Reports{% endblock %}
+{% block page_title %}Reports{% endblock %}
+{% block content %}
+<p class="text-muted small">Downloads are generated from the live database as CSV files (opens in Excel / LibreOffice / Google Sheets). Each download is recorded in the audit log.</p>
+<div class="row g-3">
+  {% for name, icon, title, desc in [('students', 'bi-mortarboard', 'Students', 'Profiles, skills, profile completion, applications and allocations.'), ('internships', 'bi-briefcase', 'Internships', 'All internships with seats, allocations, applications and requirements.'), ('applications', 'bi-inboxes', 'Applications', 'Every application with status, preference and timestamps.'), ('allocations', 'bi-award', 'Allocations', 'Active and cancelled allocations with scores and source run.')] %}
+  <div class="col-md-6 col-xl-3"><div class="card p-4 h-100 d-flex flex-column">
+    <i class="bi {{ icon }} fs-2 text-primary mb-2" aria-hidden="true"></i><h2 class="h6">{{ title }}</h2><p class="small text-muted">{{ desc }}</p>
+    <a class="btn btn-outline-primary btn-sm mt-auto" href="{{ url_for('admin.report_csv', name=name) }}"><i class="bi bi-download me-1"></i>Download CSV</a></div></div>
+  {% endfor %}
+</div>
+<p class="small text-muted mt-3">Per-run allocation reports are available on each run's page in the <a href="{{ url_for('admin.allocation') }}">Allocation centre</a>.</p>
+{% endblock %}

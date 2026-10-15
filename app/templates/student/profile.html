@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import csrf, skills with context %}
+{% block title %}My profile{% endblock %}
+{% block page_title %}My profile{% endblock %}
+{% block content %}
+{% macro val(name, default='') -%}{{ form.get(name, '') if form else (default if default is not none else '') }}{%- endmacro %}
+{% set pct = p.completion_percent() %}
+<div class="card p-3 mb-3">
+  <div class="d-flex flex-wrap align-items-center gap-3">
+    <div class="flex-grow-1">
+      <div class="d-flex justify-content-between small mb-1"><span class="fw-semibold">Profile completion</span><span>{{ pct }}%</span></div>
+      <div class="progress" role="progressbar" aria-label="Profile completion" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: {{ pct }}%"></div></div>
+    </div>
+    {% if p.missing_fields() %}<div class="small text-muted">Missing: {{ p.missing_fields()|join(', ') }}</div>{% endif %}
+  </div>
+</div>
+
+<div class="row g-3">
+  <div class="col-xl-8">
+    <form method="post" class="needs-validation" novalidate>
+      {{ csrf() }}
+      <div class="card mb-3"><div class="card-header">Personal & academic details</div><div class="card-body row g-3">
+        <div class="col-md-6"><label class="form-label" for="name">Full name</label>
+          <input class="form-control" id="name" name="name" required minlength="2" maxlength="120" value="{{ val('name', current_user.name) }}"><div class="invalid-feedback">Name is required.</div></div>
+        <div class="col-md-3"><label class="form-label" for="roll_number">Roll number</label>
+          <input class="form-control" id="roll_number" name="roll_number" maxlength="40" value="{{ val('roll_number', p.roll_number) }}"></div>
+        <div class="col-md-3"><label class="form-label" for="phone">Phone</label>
+          <input class="form-control" id="phone" name="phone" maxlength="30" value="{{ val('phone', p.phone) }}"></div>
+        <div class="col-md-4"><label class="form-label" for="degree">Degree</label>
+          <input class="form-control" id="degree" name="degree" maxlength="80" placeholder="B.Tech" value="{{ val('degree', p.degree) }}"></div>
+        <div class="col-md-4"><label class="form-label" for="department">Department</label>
+          <input class="form-control" id="department" name="department" maxlength="80" placeholder="Computer Science" value="{{ val('department', p.department) }}"></div>
+        <div class="col-md-2"><label class="form-label" for="year_of_study">Year</label>
+          <input type="number" class="form-control" id="year_of_study" name="year_of_study" min="1" max="6" value="{{ val('year_of_study', p.year_of_study) }}"><div class="invalid-feedback">1–6</div></div>
+        <div class="col-md-2"><label class="form-label" for="graduation_year">Grad. year</label>
+          <input type="number" class="form-control" id="graduation_year" name="graduation_year" min="2000" max="2100" value="{{ val('graduation_year', p.graduation_year) }}"></div>
+        <div class="col-md-3"><label class="form-label" for="cgpa">CGPA <span class="text-muted fw-normal">(0–10)</span></label>
+          <input type="number" step="0.01" class="form-control" id="cgpa" name="cgpa" min="0" max="10" value="{{ val('cgpa', p.cgpa) }}"><div class="invalid-feedback">0–10</div></div>
+        <div class="col-md-3"><label class="form-label" for="percentage">Percentage <span class="text-muted fw-normal">(opt.)</span></label>
+          <input type="number" step="0.01" class="form-control" id="percentage" name="percentage" min="0" max="100" value="{{ val('percentage', p.percentage) }}"></div>
+      </div></div>
+
+      <div class="card mb-3" id="skills"><div class="card-header">Skills</div><div class="card-body">
+        <p class="small text-muted">Common spellings are normalised automatically (e.g. <em>JS → JavaScript</em>, <em>ML → Machine Learning</em>). Remove anything that is not accurate.</p>
+        <input type="hidden" id="skillsInput" name="skills" value="{{ val('skills', p.skill_names|join(', ')) }}">
+        <div data-skill-editor data-target="#skillsInput">
+          <div class="chips mb-2"></div>
+          <div class="input-group">
+            <input class="form-control add-skill" list="skillList" placeholder="Type a skill and press Enter" aria-label="Add a skill">
+            <button class="btn btn-outline-primary add-skill-btn" type="button">Add</button>
+          </div>
+          <datalist id="skillList">{% for s in skill_names %}<option value="{{ s }}">{% endfor %}</datalist>
+          {% if p.resume and p.resume.extracted_skill_list %}
+            {% set missing = p.resume.extracted_skill_list|reject('in', p.skill_names)|list %}
+            {% if missing %}<div class="small mt-2">Detected in resume but not on profile (click to add):
+              {% for s in missing %}<button type="button" class="skill-chip pref border-0" data-add-skill="{{ s }}">+ {{ s }}</button>{% endfor %}</div>{% endif %}
+          {% endif %}
+        </div>
+      </div></div>
+
+      <div class="card mb-3"><div class="card-header">Projects, experience & interests</div><div class="card-body row g-3">
+        <div class="col-12"><label class="form-label" for="projects">Projects</label>
+          <textarea class="form-control" id="projects" name="projects" rows="3" maxlength="5000" placeholder="Describe projects and the technologies used">{{ val('projects', p.projects) }}</textarea></div>
+        <div class="col-md-6"><label class="form-label" for="experience">Experience</label>
+          <textarea class="form-control" id="experience" name="experience" rows="3" maxlength="5000" placeholder="Previous internships, freelance, clubs…">{{ val('experience', p.experience) }}</textarea></div>
+        <div class="col-md-6"><label class="form-label" for="certifications">Certifications</label>
+          <textarea class="form-control" id="certifications" name="certifications" rows="3" maxlength="2000">{{ val('certifications', p.certifications) }}</textarea></div>
+        <div class="col-12"><label class="form-label" for="interests">Interests</label>
+          <input class="form-control" id="interests" name="interests" maxlength="2000" placeholder="e.g. machine learning, web apps, cloud" value="{{ val('interests', p.interests) }}"></div>
+        <div class="col-md-6"><label class="form-label" for="preferred_domain">Preferred internship domain</label>
+          <select class="form-select" id="preferred_domain" name="preferred_domain">
+            <option value="">No preference</option>
+            {% set cur = val('preferred_domain', p.preferred_domain) %}
+            {% for d in domains %}<option {{ 'selected' if cur == d }}>{{ d }}</option>{% endfor %}
+          </select></div>
+        <div class="col-md-6"><label class="form-label" for="preferred_location">Preferred location</label>
+          <input class="form-control" id="preferred_location" name="preferred_location" maxlength="80" placeholder="City (remote internships always fit)" value="{{ val('preferred_location', p.preferred_location) }}"></div>
+      </div></div>
+      <div class="d-flex justify-content-end mb-4"><button class="btn btn-primary px-4" type="submit" data-loading-text="Saving…"><i class="bi bi-save me-1"></i>Save profile</button></div>
+    </form>
+  </div>
+
+  <div class="col-xl-4">
+    <div class="card mb-3" id="resume"><div class="card-header">Resume (PDF)</div><div class="card-body">
+      {% if p.resume %}
+        <div class="d-flex align-items-center gap-2 mb-2"><i class="bi bi-file-earmark-pdf fs-3 text-danger"></i>
+          <div class="min-w-0"><div class="fw-semibold text-truncate">{{ p.resume.original_filename }}</div>
+            <div class="small text-muted">{{ (p.resume.size_bytes / 1024)|round(1) }} KB · {{ p.resume.uploaded_at|dt }}</div></div></div>
+        <div class="alert {{ 'alert-success' if p.resume.extraction_status == 'ok' else 'alert-warning' }} small py-2">{{ p.resume.extraction_message }}</div>
+        {% if p.resume.extracted_skill_list %}<div class="section-title mb-1">Skills detected</div><div class="mb-2">{{ skills(p.resume.extracted_skill_list) }}</div>{% endif %}
+        <div class="d-flex gap-2 mb-3">
+          <a class="btn btn-sm btn-outline-primary" href="{{ url_for('main.resume', student_id=p.id) }}" target="_blank" rel="noopener"><i class="bi bi-eye me-1"></i>View</a>
+          <form method="post" action="{{ url_for('student.delete_resume') }}" data-confirm="Remove your resume? Skills already on your profile are kept.">{{ csrf() }}<button class="btn btn-sm btn-outline-danger" type="submit">Remove</button></form>
+        </div>
+      {% endif %}
+      <form method="post" action="{{ url_for('student.upload_resume') }}" enctype="multipart/form-data" class="needs-validation" novalidate data-overlay="1">
+        {{ csrf() }}
+        <label class="form-label" for="resumeFile">{{ 'Replace resume' if p.resume else 'Upload resume' }}</label>
+        <input class="form-control mb-2" type="file" id="resumeFile" name="resume" accept="application/pdf,.pdf" required aria-describedby="resumeHelp">
+        <div class="invalid-feedback">Choose a PDF file.</div>
+        <div id="resumeHelp" class="form-text mb-2">Text-based PDF, max {{ config.MAX_RESUME_MB }} MB. Scanned images can't be read (no OCR). Detected skills are added to your profile for review.</div>
+        <button class="btn btn-accent w-100" type="submit" data-loading-text="Analysing resume…"><i class="bi bi-upload me-1"></i>Upload & analyse</button>
+      </form>
+    </div></div>
+    <div class="card p-3 small text-muted"><i class="bi bi-shield-lock me-1"></i>Your resume is visible only to you, the placement cell, and companies whose internships you apply to.</div>
+  </div>
+</div>
+{% endblock %}

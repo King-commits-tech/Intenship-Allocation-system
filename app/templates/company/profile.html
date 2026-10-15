@@ -1,0 +1,21 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import csrf with context %}
+{% block title %}Company profile{% endblock %}
+{% block page_title %}Company profile{% endblock %}
+{% block content %}
+<div class="row"><div class="col-xl-8">
+<form method="post" class="card needs-validation" novalidate>
+  {{ csrf() }}
+  <div class="card-header d-flex justify-content-between">Details {% if c.is_verified %}<span class="badge text-bg-success"><i class="bi bi-patch-check me-1"></i>Verified</span>{% else %}<span class="badge text-bg-warning">Pending verification</span>{% endif %}</div>
+  <div class="card-body row g-3">
+    <div class="col-md-6"><label class="form-label" for="company_name">Company name</label><input class="form-control" id="company_name" name="company_name" value="{{ c.company_name }}" required minlength="2" maxlength="150"><div class="invalid-feedback">Required</div></div>
+    <div class="col-md-6"><label class="form-label" for="industry">Industry</label><input class="form-control" id="industry" name="industry" value="{{ c.industry or '' }}" maxlength="80"></div>
+    <div class="col-md-6"><label class="form-label" for="website">Website</label><input class="form-control" id="website" name="website" value="{{ c.website or '' }}" maxlength="255" placeholder="https://"></div>
+    <div class="col-md-6"><label class="form-label" for="location">Headquarters</label><input class="form-control" id="location" name="location" value="{{ c.location or '' }}" maxlength="120"></div>
+    <div class="col-md-6"><label class="form-label" for="contact_person">Contact person</label><input class="form-control" id="contact_person" name="contact_person" value="{{ c.contact_person or '' }}" maxlength="120"></div>
+    <div class="col-12"><label class="form-label" for="description">About the company</label><textarea class="form-control" id="description" name="description" rows="5" maxlength="5000">{{ c.description or '' }}</textarea></div>
+  </div>
+  <div class="card-footer bg-transparent text-end"><button class="btn btn-primary" type="submit">Save</button></div>
+</form>
+</div></div>
+{% endblock %}

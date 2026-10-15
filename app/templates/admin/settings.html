@@ -1,0 +1,44 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import csrf with context %}
+{% block title %}Settings{% endblock %}
+{% block page_title %}System settings{% endblock %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <form method="post" class="card needs-validation" novalidate data-confirm="Save settings? All cached match scores will be recomputed with the new values.">
+      {{ csrf() }}
+      <div class="card-header">Matching weights</div>
+      <div class="card-body row g-3">
+        <p class="small text-muted mb-0">Weights are relative — they are normalised to 100% when scores are computed. Default 50 / 20 / 15 / 15.</p>
+        {% for key in ['weight_skills', 'weight_projects', 'weight_interests', 'weight_academics'] %}
+        <div class="col-sm-6"><label class="form-label" for="{{ key }}">{{ labels[key].replace('Weight: ', '')|capitalize }}</label>
+          <input type="number" step="0.5" min="0" max="100" class="form-control" id="{{ key }}" name="{{ key }}" value="{{ values[key] }}" required></div>
+        {% endfor %}
+      </div>
+      <div class="card-header border-top">Allocation policy</div>
+      <div class="card-body row g-3">
+        <div class="col-sm-6"><label class="form-label" for="max_allocations_per_student">{{ labels.max_allocations_per_student }}</label><input type="number" min="1" max="5" class="form-control" id="max_allocations_per_student" name="max_allocations_per_student" value="{{ values.max_allocations_per_student }}" required></div>
+        <div class="col-sm-6"><label class="form-label" for="min_match_score">{{ labels.min_match_score }}</label><input type="number" step="1" min="0" max="100" class="form-control" id="min_match_score" name="min_match_score" value="{{ values.min_match_score }}" required></div>
+        <div class="col-12"><label class="form-label" for="allocation_only_shortlisted">Applications considered by the allocation</label>
+          <select class="form-select" id="allocation_only_shortlisted" name="allocation_only_shortlisted"><option value="0" {{ 'selected' if not values.allocation_only_shortlisted }}>Submitted, shortlisted and selected</option><option value="1" {{ 'selected' if values.allocation_only_shortlisted }}>Only shortlisted and selected by the company</option></select></div>
+      </div>
+      <div class="card-footer bg-transparent text-end"><button class="btn btn-primary" type="submit">Save settings</button></div>
+    </form>
+  </div>
+  <div class="col-lg-5">
+    <div class="card p-4 mb-3">
+      <h2 class="h6">Scoring formula</h2>
+      <p class="small mb-1"><code>score = 100 × Σ(wᵢ × componentᵢ) / Σwᵢ</code></p>
+      <ul class="small mb-0">
+        <li><strong>Skills</strong>: 0.75 × required coverage + 0.25 × preferred coverage</li>
+        <li><strong>Projects</strong>: 0.5 × share of internship skills shown in projects + 0.5 × TF-IDF similarity</li>
+        <li><strong>Interests</strong>: 0.5 × domain match + 0.4 × TF-IDF similarity + 0.1 × location fit</li>
+        <li><strong>Academics</strong>: CGPA / 10 (neutral 0.5 if missing)</li>
+      </ul>
+    </div>
+    <form method="post" class="card p-4">{{ csrf() }}<input type="hidden" name="action" value="recompute">
+      <h2 class="h6">Maintenance</h2><p class="small text-muted">Recompute cached match scores for every application (e.g. after editing the skill dictionary).</p>
+      <button class="btn btn-outline-primary btn-sm align-self-start" type="submit" data-loading-text="Recomputing…"><i class="bi bi-arrow-repeat me-1"></i>Recompute scores</button></form>
+  </div>
+</div>
+{% endblock %}

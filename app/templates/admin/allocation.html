@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import csrf, empty with context %}
+{% block title %}Allocation{% endblock %}
+{% block page_title %}Allocation centre{% endblock %}
+{% block content %}
+<div class="row g-3 mb-3">
+  <div class="col-lg-7">
+    <div class="card p-4 h-100">
+      <h2 class="h5">Run automatic allocation</h2>
+      <p class="small text-muted">Uses <strong>student-proposing deferred acceptance</strong>: students are placed in their highest-preference internship where they rank within the seat limit. Internship priority = company review (selected &gt; shortlisted &gt; submitted), then match score, CGPA, application time, student ID. The result is stable and deterministic.</p>
+      <ul class="small mb-3">
+        <li>{{ pool }} application(s) currently in the allocation pool</li>
+        <li>Minimum match score: <strong>{{ settings.min_match_score }}</strong> · Max allocations per student: <strong>{{ settings.max_allocations_per_student }}</strong> · Only shortlisted: <strong>{{ 'yes' if settings.allocation_only_shortlisted else 'no' }}</strong> (<a href="{{ url_for('admin.settings') }}">change</a>)</li>
+      </ul>
+      <form method="post" action="{{ url_for('admin.allocation_preview') }}" data-overlay="1">{{ csrf() }}
+        <button class="btn btn-accent" type="submit" data-loading-text="Computing allocation…"><i class="bi bi-diagram-3 me-1"></i>Generate preview</button>
+        <span class="small text-muted ms-2">Nothing is final until you confirm the preview.</span></form>
+    </div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card p-4 h-100">
+      <h2 class="h5">Conflicts</h2>
+      {% if conflicts.over_capacity or conflicts.over_quota %}
+        {% for c in conflicts.over_capacity %}<div class="alert alert-danger small py-2 mb-2"><strong>{{ c.internship.title }}</strong> has {{ c.allocated }} active allocations but only {{ c.internship.seats }} seats. Cancel some below.</div>{% endfor %}
+        {% for c in conflicts.over_quota %}<div class="alert alert-danger small py-2 mb-2"><strong>{{ c.student.user.name }}</strong> holds {{ c.allocated }} allocations (limit {{ settings.max_allocations_per_student }}). <a href="{{ url_for('admin.student_detail', sid=c.student.id) }}">Resolve</a></div>{% endfor %}
+      {% else %}<p class="small text-success mb-0"><i class="bi bi-check-circle me-1"></i>No seat-limit or allocation-limit conflicts detected.</p>{% endif %}
+      <hr>
+      <h3 class="h6">Manual allocation / reassignment</h3>
+      <form method="post" action="{{ url_for('admin.manual_allocation') }}" class="vstack gap-2" data-confirm="Create this allocation? Seat and per-student limits are enforced.">
+        {{ csrf() }}
+        <label class="visually-hidden" for="m_student">Student</label>
+        <select class="form-select form-select-sm" id="m_student" name="student_id" required><option value="">Student…</option>{% for s in students %}<option value="{{ s.id }}">{{ s.user.name }} ({{ s.department or '—' }})</option>{% endfor %}</select>
+        <label class="visually-hidden" for="m_internship">Internship</label>
+        <select class="form-select form-select-sm" id="m_internship" name="internship_id" required><option value="">Internship…</option>{% for i in internships %}<option value="{{ i.id }}">{{ i.title }} ({{ i.seats_left() }} left)</option>{% endfor %}</select>
+        <input class="form-control form-control-sm" name="note" maxlength="200" placeholder="Reason / note" aria-label="Note">
+        <button class="btn btn-sm btn-primary" type="submit">Allocate</button>
+      </form>
+    </div>
+  </div>
+</div>
+
+<div class="card mb-3"><div class="card-header">Allocation runs</div>
+{% if runs %}
+<div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>Run</th><th>Created</th><th>By</th><th>Proposed</th><th>Confirmed</th><th>Status</th><th></th></tr></thead>
+  <tbody>{% for r in runs %}<tr><td>#{{ r.id }}</td><td class="small">{{ r.created_at|dt }}</td><td class="small">{{ r.created_by.name if r.created_by else '—' }}</td>
+    <td>{{ r.summary.get('proposed_allocations', 0) }}</td><td>{{ r.summary.get('confirmed', '—') }}</td><td>{{ status_badge(r.status) }}</td>
+    <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.run_detail', rid=r.id) }}">Open</a></td></tr>{% endfor %}</tbody></table></div>
+{% else %}{{ empty('bi-diagram-3', 'No allocation runs yet', 'Generate a preview to see the proposed allocation.') }}{% endif %}
+</div>
+
+<div class="card"><div class="card-header d-flex justify-content-between">Active allocations ({{ active|length }}) <a class="small fw-normal" href="{{ url_for('admin.report_csv', name='allocations') }}"><i class="bi bi-download"></i> CSV</a></div>
+{% if active %}
+<div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>Student</th><th>Internship</th><th>Score</th><th>Source</th><th>Since</th><th class="text-end">Cancel</th></tr></thead>
+  <tbody>{% for a in active %}<tr><td>{{ a.student.user.name }}</td><td>{{ a.internship.title }}<div class="small text-muted">{{ a.internship.company.company_name }}</div></td><td>{{ a.score }}</td>
+    <td class="small">{{ 'Run #' ~ a.run_id if a.run_id else 'Manual' }}</td><td class="small">{{ a.created_at|dt }}</td>
+    <td class="text-end"><form method="post" action="{{ url_for('admin.cancel_allocation', alloc_id=a.id) }}" class="d-inline-flex gap-1" data-confirm="Cancel {{ a.student.user.name }}'s allocation to {{ a.internship.title }}? Both parties will be notified.">{{ csrf() }}<input class="form-control form-control-sm" name="reason" placeholder="Reason" aria-label="Reason" maxlength="200" style="width:140px"><button class="btn btn-sm btn-outline-danger" type="submit">Cancel</button></form></td></tr>{% endfor %}</tbody></table></div>
+{% else %}{{ empty('bi-award', 'No active allocations') }}{% endif %}
+</div>
+{% endblock %}

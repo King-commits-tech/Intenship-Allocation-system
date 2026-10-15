@@ -1,0 +1,24 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty, post_button with context %}
+{% block title %}Companies{% endblock %}
+{% block page_title %}Companies{% endblock %}
+{% block content %}
+<div class="d-flex mb-3"><a class="btn btn-primary btn-sm ms-auto" href="{{ url_for('admin.new_company') }}"><i class="bi bi-plus-lg me-1"></i>Add company account</a></div>
+{% if items %}
+<div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>Company</th><th>Contact</th><th>Internships</th><th>Verification</th><th>Account</th><th class="text-end">Actions</th></tr></thead>
+  <tbody>{% for c in items %}<tr>
+    <td><div class="fw-semibold">{{ c.company_name }}</div><div class="small text-muted">{{ c.industry or '—' }} · {{ c.location or '—' }}</div></td>
+    <td class="small">{{ c.contact_person or c.user.name }}<div class="text-muted">{{ c.user.email }}</div></td>
+    <td>{{ c.internships|length }}</td>
+    <td>{% if c.is_verified %}<span class="badge text-bg-success">Verified</span>{% else %}<span class="badge text-bg-warning">Pending</span>{% endif %}</td>
+    <td>{% if c.user.is_active %}<span class="badge text-bg-success">Active</span>{% else %}<span class="badge text-bg-secondary">Disabled</span>{% endif %}</td>
+    <td class="text-end text-nowrap">
+      {% if c.is_verified %}{{ post_button(url_for('admin.verify_company', cid=c.id), 'Revoke', 'btn btn-sm btn-outline-warning', confirm='Revoke verification? The company will not be able to publish new internships.', fields={'verified': '0'}) }}
+      {% else %}{{ post_button(url_for('admin.verify_company', cid=c.id), 'Verify', 'btn btn-sm btn-success', fields={'verified': '1'}) }}{% endif %}
+      <a class="btn btn-sm btn-light" href="{{ url_for('admin.edit_company', cid=c.id) }}" title="Edit" aria-label="Edit {{ c.company_name }}"><i class="bi bi-pencil"></i></a>
+      {{ post_button(url_for('admin.toggle_user', uid=c.user.id), '', 'btn btn-sm btn-light', icon='bi-power', title=('Disable' if c.user.is_active else 'Enable') ~ ' account') }}
+    </td>
+  </tr>{% endfor %}</tbody></table></div></div>
+{% else %}<div class="card">{{ empty('bi-buildings', 'No companies yet', 'Recruiters can self-register, or you can add an account.', url_for('admin.new_company'), 'Add company') }}</div>{% endif %}
+{% endblock %}

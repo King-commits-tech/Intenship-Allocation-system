@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block body %}
+<nav class="navbar navbar-expand-md navbar-dark public-nav">
+  <div class="container">
+    <a class="navbar-brand d-flex align-items-center gap-2 fw-bold" href="{{ url_for('main.index') }}"><span class="brand-mark">IA</span> InternAlloc AI</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#pubnav" aria-controls="pubnav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="pubnav">
+      <ul class="navbar-nav ms-auto align-items-md-center gap-md-2">
+        <li class="nav-item"><a class="nav-link" href="{{ url_for('main.index') }}#how">How it works</a></li>
+        {% if current_user.is_authenticated %}
+          <li class="nav-item"><a class="btn btn-accent btn-sm ms-md-2" href="{{ url_for('main.dashboard') }}">Go to dashboard</a></li>
+        {% else %}
+          <li class="nav-item"><a class="nav-link" href="{{ url_for('auth.login') }}">Log in</a></li>
+          <li class="nav-item"><a class="btn btn-accent btn-sm ms-md-2" href="{{ url_for('auth.register') }}">Create account</a></li>
+        {% endif %}
+      </ul>
+    </div>
+  </div>
+</nav>
+<main id="main-content">
+  {% block public_content %}{% endblock %}
+</main>
+{% endblock %}

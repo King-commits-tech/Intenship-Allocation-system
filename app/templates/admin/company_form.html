@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import csrf with context %}
+{% block title %}{{ 'Edit' if c else 'Add' }} company{% endblock %}
+{% block page_title %}{{ 'Edit company' if c else 'Add company account' }}{% endblock %}
+{% block content %}
+{% macro v(name, default='') -%}{{ form.get(name, '') if form else (default if default is not none else '') }}{%- endmacro %}
+<a href="{{ url_for('admin.companies') }}" class="small d-inline-block mb-3"><i class="bi bi-arrow-left"></i> Companies</a>
+<div class="row"><div class="col-xl-8">
+<form method="post" class="card needs-validation" novalidate>
+  {{ csrf() }}
+  <div class="card-body row g-3">
+    <div class="col-md-6"><label class="form-label" for="company_name">Company name</label><input class="form-control" id="company_name" name="company_name" required minlength="2" maxlength="150" value="{{ v('company_name', c.company_name if c) }}"><div class="invalid-feedback">Required</div></div>
+    <div class="col-md-6"><label class="form-label" for="industry">Industry</label><input class="form-control" id="industry" name="industry" maxlength="80" value="{{ v('industry', c.industry if c) }}"></div>
+    <div class="col-md-6"><label class="form-label" for="contact_person">Contact person</label><input class="form-control" id="contact_person" name="contact_person" {{ 'required' if not c }} maxlength="120" value="{{ v('contact_person', c.contact_person if c) }}"></div>
+    <div class="col-md-6"><label class="form-label" for="location">Location</label><input class="form-control" id="location" name="location" maxlength="120" value="{{ v('location', c.location if c) }}"></div>
+    <div class="col-md-6"><label class="form-label" for="website">Website</label><input class="form-control" id="website" name="website" maxlength="255" value="{{ v('website', c.website if c) }}"></div>
+    {% if not c %}
+    <div class="col-md-6"><label class="form-label" for="email">Login email</label><input type="email" class="form-control" id="email" name="email" required value="{{ v('email') }}"><div class="invalid-feedback">Valid email required</div></div>
+    <div class="col-md-6"><label class="form-label" for="password">Initial password</label><input type="password" class="form-control" id="password" name="password" required minlength="8" autocomplete="new-password"><div class="form-text">8+ characters with letters and numbers. Share it securely.</div></div>
+    {% endif %}
+    <div class="col-12"><label class="form-label" for="description">Description</label><textarea class="form-control" id="description" name="description" rows="4" maxlength="5000">{{ v('description', c.description if c) }}</textarea></div>
+  </div>
+  <div class="card-footer bg-transparent text-end"><button class="btn btn-primary" type="submit">{{ 'Save' if c else 'Create & verify' }}</button></div>
+</form>
+</div></div>
+{% endblock %}

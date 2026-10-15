@@ -1,0 +1,48 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="app-shell">
+  <aside class="sidebar" aria-label="Main navigation">
+    <a class="brand" href="{{ url_for('main.dashboard') }}"><span class="brand-mark">IA</span> InternAlloc AI</a>
+    <div class="role-chip">{{ {'student': 'Student', 'company': 'Recruiter', 'admin': 'College Admin'}[current_user.role] }} workspace</div>
+    <nav>
+      {% for endpoint, icon, label in nav_items %}
+        <a href="{{ url_for(endpoint) }}" class="{{ 'active' if active_endpoint == endpoint }}"{% if active_endpoint == endpoint %} aria-current="page"{% endif %}>
+          <i class="bi {{ icon }}" aria-hidden="true"></i><span>{{ label }}</span>
+        </a>
+      {% endfor %}
+    </nav>
+    <div class="sidebar-foot">Scores assist decisions; they don't guarantee selection.</div>
+  </aside>
+  <div class="main">
+    <header class="topbar">
+      <button class="btn btn-light d-lg-none" data-toggle-sidebar aria-label="Open menu"><i class="bi bi-list"></i></button>
+      <h1 class="page-title">{% block page_title %}{% endblock %}</h1>
+      <div class="ms-auto d-flex align-items-center gap-3">
+        <a href="{{ url_for('main.notifications') }}" class="bell" aria-label="Notifications ({{ unread_count }} unread)">
+          <i class="bi bi-bell"></i>
+          <span id="notifCount" class="badge rounded-pill text-bg-danger count {{ 'd-none' if not unread_count }}">{{ unread_count }}</span>
+        </a>
+        <div class="dropdown">
+          <button class="btn btn-link p-0 d-flex align-items-center gap-2 text-decoration-none" data-bs-toggle="dropdown" aria-expanded="false">
+            <span class="avatar">{{ current_user.name[:1]|upper }}</span>
+            <span class="d-none d-md-inline text-dark fw-semibold small">{{ current_user.name }}</span>
+            <i class="bi bi-chevron-down small text-muted"></i>
+          </button>
+          <ul class="dropdown-menu dropdown-menu-end">
+            <li><span class="dropdown-item-text small text-muted">{{ current_user.email }}</span></li>
+            {% if current_user.is_student %}<li><a class="dropdown-item" href="{{ url_for('student.profile') }}"><i class="bi bi-person me-2"></i>My profile</a></li>{% endif %}
+            {% if current_user.is_company %}<li><a class="dropdown-item" href="{{ url_for('company.profile') }}"><i class="bi bi-building me-2"></i>Company profile</a></li>{% endif %}
+            <li><hr class="dropdown-divider"></li>
+            <li><form method="post" action="{{ url_for('auth.logout') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button class="dropdown-item" type="submit" data-no-loading><i class="bi bi-box-arrow-right me-2"></i>Log out</button></form></li>
+          </ul>
+        </div>
+      </div>
+    </header>
+    <main class="content" id="main-content">
+      {% include "partials/flash.html" %}
+      {% block content %}{% endblock %}
+    </main>
+  </div>
+</div>
+{% endblock %}

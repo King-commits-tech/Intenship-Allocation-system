@@ -1,0 +1,38 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty, pager, csrf with context %}
+{% block title %}Notifications{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap gap-2 align-items-center mb-3">
+  <div class="btn-group" role="group" aria-label="Filter">
+    <a href="{{ url_for('main.notifications') }}" class="btn btn-sm {{ 'btn-primary' if request.args.get('filter') != 'unread' else 'btn-outline-primary' }}">All</a>
+    <a href="{{ url_for('main.notifications', filter='unread') }}" class="btn btn-sm {{ 'btn-primary' if request.args.get('filter') == 'unread' else 'btn-outline-primary' }}">Unread ({{ unread_count }})</a>
+  </div>
+  {% if unread_count %}
+  <form method="post" action="{{ url_for('main.mark_all_read') }}" class="ms-auto">{{ csrf() }}<button class="btn btn-sm btn-outline-secondary" type="submit"><i class="bi bi-check2-all me-1"></i>Mark all as read</button></form>
+  {% endif %}
+</div>
+<p class="small text-muted">Notifications are stored in-app; the unread badge refreshes about once a minute.</p>
+{% if pagination.items %}
+  <div class="vstack gap-2">
+  {% for n in pagination.items %}
+    <div class="card p-3 {{ 'notice-unread' if not n.is_read }}">
+      <div class="d-flex gap-3">
+        <i class="bi {{ {'application': 'bi-send', 'allocation': 'bi-award', 'internship': 'bi-briefcase', 'announcement': 'bi-megaphone'}.get(n.category, 'bi-info-circle') }} fs-4 text-primary" aria-hidden="true"></i>
+        <div class="flex-grow-1">
+          <div class="d-flex flex-wrap justify-content-between gap-2"><strong>{{ n.title }}</strong><span class="small text-muted">{{ n.created_at|dt }}</span></div>
+          <div class="small">{{ n.message }}</div>
+        </div>
+        <div class="d-flex flex-column gap-1">
+          {% if n.link %}<form method="post" action="{{ url_for('main.mark_read', nid=n.id) }}">{{ csrf() }}<input type="hidden" name="open" value="1"><button class="btn btn-sm btn-outline-primary" type="submit" data-no-loading>Open</button></form>{% endif %}
+          {% if not n.is_read %}<form method="post" action="{{ url_for('main.mark_read', nid=n.id) }}">{{ csrf() }}<button class="btn btn-sm btn-light" type="submit" data-no-loading title="Mark as read" aria-label="Mark as read"><i class="bi bi-check2"></i></button></form>{% endif %}
+        </div>
+      </div>
+    </div>
+  {% endfor %}
+  </div>
+  {{ pager(pagination.page, pagination.pages) }}
+{% else %}
+  <div class="card">{{ empty('bi-bell-slash', 'No notifications', 'Updates about applications, allocations and announcements will appear here.') }}</div>
+{% endif %}
+{% endblock %}

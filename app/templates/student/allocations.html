@@ -1,0 +1,43 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty, csrf with context %}
+{% block title %}Allocation{% endblock %}
+{% block page_title %}Allocation results & feedback{% endblock %}
+{% block content %}
+{% if allocs %}
+<div class="vstack gap-3">
+  {% for a in allocs %}
+  <div class="card p-4">
+    <div class="d-flex flex-wrap gap-3 align-items-start">
+      <i class="bi {{ 'bi-award text-success' if a.status == 'active' else 'bi-x-circle text-danger' }} fs-1" aria-hidden="true"></i>
+      <div class="flex-grow-1">
+        <div class="company">{{ a.internship.company.company_name }}</div>
+        <h2 class="h5 mb-1">{{ a.internship.title }}</h2>
+        <div class="meta"><span><i class="bi bi-geo-alt"></i> {{ a.internship.location or a.internship.work_mode }}</span><span><i class="bi bi-hourglass-split"></i> {{ a.internship.duration_weeks }} weeks</span><span><i class="bi bi-cash"></i> {{ a.internship.stipend|inr }}</span><span><i class="bi bi-calendar"></i> Allocated {{ a.created_at|dt }}</span></div>
+        <div class="mt-2">{{ status_badge(a.status) }} {% if a.score is not none %}<span class="small text-muted ms-2">Match score at allocation: {{ a.score }}</span>{% endif %}</div>
+        {% if a.note %}<div class="small text-muted mt-1">{{ a.note }}</div>{% endif %}
+      </div>
+    </div>
+    {% if a.status == 'active' %}
+    <hr>
+    {% set fb = feedback.get(a.internship_id) %}
+    <h3 class="h6">{{ 'Update your feedback' if fb else 'Internship feedback' }}</h3>
+    <p class="small text-muted">Share feedback once you have started or completed the internship. It helps the college improve future allocations.</p>
+    <form method="post" action="{{ url_for('student.feedback', iid=a.internship_id) }}" class="row g-2 needs-validation" novalidate>
+      {{ csrf() }}
+      <div class="col-sm-3"><label class="form-label small" for="rating{{ a.id }}">Overall (1–5)</label>
+        <select class="form-select" id="rating{{ a.id }}" name="rating" required><option value="">Choose…</option>{% for n in range(5, 0, -1) %}<option value="{{ n }}" {{ 'selected' if fb and fb.rating == n }}>{{ n }} ★</option>{% endfor %}</select>
+        <div class="invalid-feedback">Required</div></div>
+      <div class="col-sm-3"><label class="form-label small" for="learn{{ a.id }}">Learning (1–5)</label>
+        <select class="form-select" id="learn{{ a.id }}" name="learning_rating"><option value="">—</option>{% for n in range(5, 0, -1) %}<option value="{{ n }}" {{ 'selected' if fb and fb.learning_rating == n }}>{{ n }} ★</option>{% endfor %}</select></div>
+      <div class="col-sm-6"><label class="form-label small" for="comments{{ a.id }}">Comments</label>
+        <input class="form-control" id="comments{{ a.id }}" name="comments" maxlength="3000" value="{{ fb.comments if fb and fb.comments else '' }}"></div>
+      <div class="col-12"><button class="btn btn-primary btn-sm" type="submit">{{ 'Update feedback' if fb else 'Submit feedback' }}</button></div>
+    </form>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+  <div class="card">{{ empty('bi-hourglass', 'No allocation yet', 'Allocations appear here after the placement cell runs and confirms the allocation process. Keep your applications and preferences up to date.', url_for('student.applications'), 'My applications') }}</div>
+{% endif %}
+{% endblock %}

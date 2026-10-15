@@ -1,0 +1,23 @@
+{% from "partials/macros.html" import score_ring, skills with context %}
+<div class="card internship-card p-3 d-flex flex-column">
+  <div class="d-flex gap-3 align-items-start mb-2">
+    {{ score_ring(r.total, 58) }}
+    <div class="flex-grow-1 min-w-0">
+      <div class="company text-truncate">{{ i.company.company_name }}</div>
+      <h3 class="h6 mb-1"><a class="stretched-link text-reset text-decoration-none" href="{{ url_for('student.internship_detail', iid=i.id) }}">{{ i.title }}</a></h3>
+      <div class="small {{ 'text-danger' if not r.eligible else 'text-muted' }}">{{ 'Not eligible' if not r.eligible else r.summary }}</div>
+    </div>
+  </div>
+  <div class="meta mb-2">
+    <span><i class="bi bi-tag"></i> {{ i.domain }}</span>
+    <span><i class="bi bi-geo-alt"></i> {{ i.location ~ ' · ' if i.location and i.location != i.work_mode }}{{ i.work_mode }}</span>
+    <span><i class="bi bi-cash"></i> {{ i.stipend|inr }}</span>
+    <span><i class="bi bi-hourglass-split"></i> {{ i.duration_weeks }} wks</span>
+    <span><i class="bi bi-people"></i> {{ i.seats_left() }}/{{ i.seats }} seats</span>
+    {% if i.deadline %}<span><i class="bi bi-calendar-event"></i> Apply by {{ i.deadline|d }}</span>{% endif %}
+  </div>
+  <div class="mt-auto">
+    {{ skills(r.matched_skills[:4], 'have') }}{{ skills(r.missing_required[:3], 'miss') }}
+    {% if applied and i.id in applied %}<div class="mt-1"><span class="small text-muted me-1">Applied:</span>{{ status_badge(applied[i.id].status) }}</div>{% endif %}
+  </div>
+</div>

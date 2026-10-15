@@ -1,0 +1,36 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty with context %}
+{% block title %}Recruiter dashboard{% endblock %}
+{% block page_title %}{{ c.company_name }}{% endblock %}
+{% block content %}
+{% if not c.is_verified %}
+<div class="alert alert-warning"><i class="bi bi-hourglass-split me-1"></i><strong>Verification pending.</strong> You can prepare internships as drafts; publishing is enabled once the placement cell verifies your company.</div>
+{% endif %}
+<div class="row g-3 mb-3">
+  {% for icon, cls, value, label in [('bi-briefcase', '', internships|selectattr('status', 'equalto', 'published')|list|length, 'Published internships'), ('bi-inboxes', 'ink', total_apps, 'Applications received'), ('bi-star', 'coral', counts.shortlisted + counts.selected, 'Shortlisted / selected'), ('bi-people', 'teal', allocated, 'Allocated candidates')] %}
+  <div class="col-6 col-xl-3"><div class="card stat-card"><div class="icon {{ cls }}"><i class="bi {{ icon }}"></i></div><div><div class="value">{{ value }}</div><div class="label">{{ label }}</div></div></div></div>
+  {% endfor %}
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-lg-6"><div class="card h-100"><div class="card-header">Applications, seats & allocations</div><div class="card-body"><div class="chart-box"><canvas id="chartApps" aria-label="Applications per internship chart"></canvas></div></div></div></div>
+  <div class="col-lg-3"><div class="card h-100"><div class="card-header">Status</div><div class="card-body"><div class="chart-box"><canvas id="chartStatus" aria-label="Application status chart"></canvas></div></div></div></div>
+  <div class="col-lg-3"><div class="card h-100"><div class="card-header">Applicant match scores</div><div class="card-body"><div class="chart-box"><canvas id="chartScores" aria-label="Score distribution chart"></canvas></div></div></div></div>
+</div>
+<div class="card">
+  <div class="card-header d-flex justify-content-between align-items-center">Latest applications <a class="btn btn-sm btn-primary" href="{{ url_for('company.new_internship') }}"><i class="bi bi-plus-lg me-1"></i>New internship</a></div>
+  {% if recent %}
+  <div class="table-responsive"><table class="table align-middle mb-0">
+    <thead><tr><th>Candidate</th><th>Internship</th><th>Applied</th><th>Status</th><th></th></tr></thead>
+    <tbody>{% for a in recent %}<tr>
+      <td>{{ a.student.user.name }}<div class="small text-muted">{{ a.student.department or '' }}</div></td>
+      <td>{{ a.internship.title }}</td><td class="small">{{ a.created_at|dt }}</td><td>{{ status_badge(a.status) }}</td>
+      <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{{ url_for('company.application_detail', aid=a.id) }}">Review</a></td>
+    </tr>{% endfor %}</tbody></table></div>
+  {% else %}{{ empty('bi-inbox', 'No applications yet', 'Publish an internship to start receiving applications.', url_for('company.internships'), 'Manage internships') }}{% endif %}
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>loadCompanyCharts();</script>
+{% endblock %}

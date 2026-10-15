@@ -1,0 +1,32 @@
+{% extends "public.html" %}
+{% block title %}Log in{% endblock %}
+{% block public_content %}
+<div class="auth-wrap">
+  <div class="auth-card">
+    {% include "partials/flash.html" %}
+    <div class="card p-4 shadow-sm">
+      <h1 class="h3 mb-1">Welcome back</h1>
+      <p class="text-muted small mb-4">Log in as a student, recruiter or college administrator.</p>
+      <form method="post" class="needs-validation" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" class="form-control" id="email" name="email" value="{{ email or '' }}" required autocomplete="username" autofocus>
+          <div class="invalid-feedback">Enter a valid email.</div>
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Password</label>
+          <input type="password" class="form-control" id="password" name="password" required autocomplete="current-password">
+          <div class="invalid-feedback">Enter your password.</div>
+        </div>
+        <div class="form-check mb-3">
+          <input class="form-check-input" type="checkbox" id="remember" name="remember" value="1">
+          <label class="form-check-label small" for="remember">Keep me logged in on this device</label>
+        </div>
+        <button class="btn btn-primary w-100" type="submit" data-loading-text="Signing in…">Log in</button>
+      </form>
+      <p class="small text-center mt-3 mb-0">New here? <a href="{{ url_for('auth.register') }}">Create a student account</a> · <a href="{{ url_for('auth.register', role='company') }}">Recruiter sign-up</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import csrf, empty with context %}
+{% block title %}Announcements{% endblock %}
+{% block page_title %}Announcements{% endblock %}
+{% block content %}
+<div class="row g-3">
+  <div class="col-lg-5">
+    <form method="post" class="card p-4 needs-validation" novalidate data-confirm="Send this announcement now? Every user in the selected audience receives an in-app notification.">
+      {{ csrf() }}
+      <h2 class="h6">New announcement</h2>
+      <div class="mb-2"><label class="form-label" for="title">Title</label><input class="form-control" id="title" name="title" required minlength="3" maxlength="150"><div class="invalid-feedback">3+ characters</div></div>
+      <div class="mb-2"><label class="form-label" for="audience">Audience</label><select class="form-select" id="audience" name="audience"><option value="all">Students & recruiters</option><option value="student">Students only</option><option value="company">Recruiters only</option></select></div>
+      <div class="mb-3"><label class="form-label" for="body">Message</label><textarea class="form-control" id="body" name="body" rows="4" required minlength="5" maxlength="5000"></textarea><div class="invalid-feedback">5+ characters</div></div>
+      <button class="btn btn-primary" type="submit"><i class="bi bi-megaphone me-1"></i>Send</button>
+    </form>
+  </div>
+  <div class="col-lg-7">
+    {% if items %}<div class="vstack gap-2">{% for a in items %}<div class="card p-3"><div class="d-flex justify-content-between"><strong>{{ a.title }}</strong><span class="badge text-bg-light">{{ {'all': 'Everyone', 'student': 'Students', 'company': 'Recruiters'}[a.audience] }}</span></div><div class="small mt-1" style="white-space:pre-line">{{ a.body }}</div><div class="small text-muted mt-1">{{ a.created_at|dt }} · {{ a.created_by.name if a.created_by else '' }}</div></div>{% endfor %}</div>
+    {% else %}<div class="card">{{ empty('bi-megaphone', 'No announcements yet') }}</div>{% endif %}
+  </div>
+</div>
+{% endblock %}

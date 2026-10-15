@@ -1,0 +1,60 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty, score_ring with context %}
+{% block title %}Student dashboard{% endblock %}
+{% block page_title %}Hello, {{ current_user.name.split(' ')[0] }} 👋{% endblock %}
+{% block content %}
+{% set pct = p.completion_percent() %}
+<div class="row g-3 mb-3">
+  <div class="col-lg-5">
+    <div class="card p-3 h-100">
+      <div class="d-flex justify-content-between align-items-center mb-2"><span class="section-title">Profile completion</span><strong>{{ pct }}%</strong></div>
+      <div class="progress mb-2" role="progressbar" aria-label="Profile completion" aria-valuenow="{{ pct }}" aria-valuemin="0" aria-valuemax="100"><div class="progress-bar" style="width: {{ pct }}%"></div></div>
+      {% if p.missing_fields() %}
+        <p class="small text-muted mb-2">Complete these to improve your matches: {{ p.missing_fields()|join(', ') }}.</p>
+        <a href="{{ url_for('student.profile') }}" class="btn btn-sm btn-accent align-self-start">Complete profile</a>
+      {% else %}<p class="small text-success mb-0"><i class="bi bi-check-circle me-1"></i>Your profile is complete.</p>{% endif %}
+    </div>
+  </div>
+  <div class="col-lg-7">
+    <div class="row g-3 h-100">
+      {% for icon, cls, value, label in [('bi-send', '', p.applications|length, 'Applications'), ('bi-star', 'ink', counts.shortlisted + counts.selected, 'Shortlisted / selected'), ('bi-award', 'teal', allocations|length, 'Allocated')] %}
+      <div class="col-4"><div class="card stat-card flex-column flex-xl-row align-items-start align-items-xl-center"><div class="icon {{ cls }}"><i class="bi {{ icon }}"></i></div><div><div class="value">{{ value }}</div><div class="label">{{ label }}</div></div></div></div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+{% if allocations %}
+<div class="alert alert-success d-flex gap-2 align-items-center"><i class="bi bi-award fs-4"></i>
+  <div>You have been allocated to <strong>{{ allocations[0].internship.title }}</strong> at {{ allocations[0].internship.company.company_name }}. <a href="{{ url_for('student.allocations') }}">View details</a></div></div>
+{% endif %}
+
+<div class="d-flex justify-content-between align-items-center mb-2 mt-4">
+  <h2 class="h5 mb-0">Top recommendations</h2>
+  <a href="{{ url_for('student.recommendations') }}" class="small">See all</a>
+</div>
+{% if recs %}
+  <div class="row g-3 mb-4">
+    {% for i, r in recs %}<div class="col-md-6 col-xl-4">{% include "partials/internship_card.html" %}</div>{% endfor %}
+  </div>
+{% else %}
+  <div class="card mb-4">{{ empty('bi-stars', 'No recommendations yet', 'Add skills and interests to your profile, or check back when new internships are published.', url_for('student.profile'), 'Update profile') }}</div>
+{% endif %}
+
+<div class="row g-3">
+  <div class="col-lg-4"><div class="card h-100"><div class="card-header">Application status</div><div class="card-body"><div class="chart-box"><canvas id="chartStatus" aria-label="Application status chart"></canvas></div></div></div></div>
+  <div class="col-lg-4"><div class="card h-100"><div class="card-header">Skills to learn next</div><div class="card-body"><div class="chart-box"><canvas id="chartGaps" aria-label="Skill gaps chart"></canvas></div><p class="small text-muted mb-0 mt-2">Skills most often missing across your top-10 matching internships.</p></div></div></div>
+  <div class="col-lg-4"><div class="card h-100"><div class="card-header d-flex justify-content-between">Recent notifications <a class="small fw-normal" href="{{ url_for('main.notifications') }}">All</a></div>
+    <div class="list-group list-group-flush">
+      {% for n in notes %}
+        <div class="list-group-item small {{ 'fw-semibold' if not n.is_read }}">{{ n.title }}<div class="text-muted fw-normal">{{ n.created_at|dt }}</div></div>
+      {% else %}<div class="p-3 small text-muted">Nothing yet.</div>{% endfor %}
+    </div></div></div>
+</div>
+<p class="disclaimer mt-3"><i class="bi bi-info-circle me-1"></i>Match scores are decision aids computed from your profile; they do not guarantee selection or employment.</p>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chartjs/chart.umd.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/charts.js') }}"></script>
+<script>loadStudentCharts();</script>
+{% endblock %}

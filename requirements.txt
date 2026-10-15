@@ -1,0 +1,18 @@
+# Tested with Python 3.13; all pins also publish wheels for Python 3.11 / 3.12 (Windows, macOS, Linux).
+Flask==3.1.3
+Flask-SQLAlchemy==3.1.1
+Flask-Migrate==4.1.0
+Flask-Login==0.6.3
+Flask-WTF==1.3.0
+SQLAlchemy==2.1.4
+alembic==1.20.0
+Werkzeug==3.1.8
+python-dotenv==1.2.3
+# AI / NLP (numpy & scipy are resolved automatically to versions compatible with your Python)
+scikit-learn==1.9.1
+pypdf==5.9.0
+# MySQL driver (+ cryptography for MySQL 8 caching_sha2_password auth)
+PyMySQL==1.2.3
+cryptography==50.0.1
+# Testing
+pytest==9.1.1

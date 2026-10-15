@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty, pager, post_button with context %}
+{% block title %}Internships{% endblock %}
+{% block page_title %}Internships{% endblock %}
+{% block content %}
+<form class="card p-3 mb-3 d-flex flex-row flex-wrap gap-2 align-items-end" method="get" role="search">
+  <div class="flex-grow-1"><label class="form-label small" for="q">Search</label><input class="form-control" id="q" name="q" value="{{ request.args.get('q', '') }}" placeholder="Title or company"></div>
+  <div><label class="form-label small" for="status">Status</label><select class="form-select" id="status" name="status" data-autosubmit><option value="">All</option>{% for s in ['draft', 'published', 'closed'] %}<option value="{{ s }}" {{ 'selected' if request.args.get('status') == s }}>{{ s|title }}</option>{% endfor %}</select></div>
+  <button class="btn btn-primary" type="submit" data-no-loading>Filter</button>
+  <a class="btn btn-accent" href="{{ url_for('admin.new_internship') }}"><i class="bi bi-plus-lg me-1"></i>New</a>
+</form>
+{% if pagination.items %}
+<div class="card"><div class="table-responsive"><table class="table align-middle mb-0">
+  <thead><tr><th>Internship</th><th>Company</th><th>Status</th><th>Seats</th><th>Apps</th><th>Deadline</th><th class="text-end">Actions</th></tr></thead>
+  <tbody>{% for i in pagination.items %}<tr>
+    <td><div class="fw-semibold">{{ i.title }}</div><div class="small text-muted">{{ i.domain }} · min CGPA {{ i.min_cgpa or '—' }}</div></td>
+    <td class="small">{{ i.company.company_name }}</td><td>{{ status_badge(i.status) }}</td>
+    <td>{{ i.active_allocation_count() }}/{{ i.seats }}</td><td>{{ i.applications|length }}</td><td class="small">{{ i.deadline|d }}</td>
+    <td class="text-end text-nowrap">
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('admin.applicants', iid=i.id) }}">Rankings</a>
+      <a class="btn btn-sm btn-light" href="{{ url_for('admin.edit_internship', iid=i.id) }}" title="Edit" aria-label="Edit {{ i.title }}"><i class="bi bi-pencil"></i></a>
+      {% if i.status != 'published' %}{{ post_button(url_for('admin.set_internship_status', iid=i.id), 'Publish', 'btn btn-sm btn-success', fields={'status': 'published'}) }}{% else %}{{ post_button(url_for('admin.set_internship_status', iid=i.id), 'Close', 'btn btn-sm btn-outline-dark', confirm='Close this internship to new applications?', fields={'status': 'closed'}) }}{% endif %}
+    </td></tr>{% endfor %}</tbody></table></div></div>
+{{ pager(pagination.page, pagination.pages) }}
+{% else %}<div class="card">{{ empty('bi-briefcase', 'No internships found', '', url_for('admin.new_internship'), 'Create internship') }}</div>{% endif %}
+{% endblock %}

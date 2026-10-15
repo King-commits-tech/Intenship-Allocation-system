@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import csrf with context %}
+{% block title %}{{ 'Edit' if i else 'New' }} internship{% endblock %}
+{% block page_title %}{{ 'Edit internship' if i else 'New internship' }}{% endblock %}
+{% block content %}
+{% macro v(name, default='') -%}{{ form.get(name, '') if form else (default if default is not none else '') }}{%- endmacro %}
+<a href="{{ back }}" class="small d-inline-block mb-3"><i class="bi bi-arrow-left"></i> Back</a>
+<form method="post" class="needs-validation" novalidate>
+  {{ csrf() }}
+  <div class="row g-3">
+    <div class="col-xl-8">
+      <div class="card mb-3"><div class="card-header">Role</div><div class="card-body row g-3">
+        {% if companies is not none %}
+        <div class="col-12"><label class="form-label" for="company_id">Company</label>
+          <select class="form-select" id="company_id" name="company_id" required><option value="">Choose…</option>
+          {% set cur = (form.get('company_id') if form else (i.company_id if i else ''))|string %}
+          {% for c in companies %}<option value="{{ c.id }}" {{ 'selected' if cur == c.id|string }}>{{ c.company_name }}{{ '' if c.is_verified else ' (unverified)' }}</option>{% endfor %}</select>
+          <div class="invalid-feedback">Choose a company.</div></div>
+        {% endif %}
+        <div class="col-md-8"><label class="form-label" for="title">Title</label>
+          <input class="form-control" id="title" name="title" required minlength="3" maxlength="150" value="{{ v('title', i.title if i) }}"><div class="invalid-feedback">At least 3 characters.</div></div>
+        <div class="col-md-4"><label class="form-label" for="domain">Domain</label>
+          <select class="form-select" id="domain" name="domain" required>{% set cur = v('domain', i.domain if i) %}<option value="">Choose…</option>
+          {% for d in domains %}<option {{ 'selected' if cur == d }}>{{ d }}</option>{% endfor %}</select><div class="invalid-feedback">Required</div></div>
+        <div class="col-12"><label class="form-label" for="description">Description</label>
+          <textarea class="form-control" id="description" name="description" rows="6" required minlength="20" maxlength="10000" placeholder="Responsibilities, tools, what the intern will learn…">{{ v('description', i.description if i) }}</textarea><div class="invalid-feedback">At least 20 characters.</div></div>
+        <div class="col-md-6"><label class="form-label" for="required_skills">Required skills</label>
+          <input class="form-control" id="required_skills" name="required_skills" list="skillHints" value="{{ v('required_skills', (i.required_skills|join(', ')) if i) }}" placeholder="Python, SQL, Flask" aria-describedby="reqHelp">
+          <div id="reqHelp" class="form-text">Comma separated. Weighted most in matching.</div></div>
+        <div class="col-md-6"><label class="form-label" for="preferred_skills">Preferred (optional) skills</label>
+          <input class="form-control" id="preferred_skills" name="preferred_skills" value="{{ v('preferred_skills', (i.preferred_skills|join(', ')) if i) }}" placeholder="Docker, Git" aria-describedby="prefHelp">
+          <div id="prefHelp" class="form-text">Bonus only; never makes a student ineligible.</div></div>
+      </div></div>
+    </div>
+    <div class="col-xl-4">
+      <div class="card mb-3"><div class="card-header">Logistics</div><div class="card-body row g-3">
+        <div class="col-6"><label class="form-label" for="work_mode">Mode</label>
+          <select class="form-select" id="work_mode" name="work_mode">{% set cur = v('work_mode', i.work_mode if i else 'On-site') %}{% for m in modes %}<option {{ 'selected' if cur == m }}>{{ m }}</option>{% endfor %}</select></div>
+        <div class="col-6"><label class="form-label" for="location">Location</label><input class="form-control" id="location" name="location" maxlength="120" value="{{ v('location', i.location if i) }}"></div>
+        <div class="col-6"><label class="form-label" for="seats">Seats</label><input type="number" class="form-control" id="seats" name="seats" min="1" max="500" required value="{{ v('seats', i.seats if i else 1) }}"><div class="invalid-feedback">1–500</div></div>
+        <div class="col-6"><label class="form-label" for="duration_weeks">Weeks</label><input type="number" class="form-control" id="duration_weeks" name="duration_weeks" min="1" max="104" value="{{ v('duration_weeks', i.duration_weeks if i else 8) }}"></div>
+        <div class="col-6"><label class="form-label" for="stipend">Stipend ₹/month</label><input type="number" class="form-control" id="stipend" name="stipend" min="0" value="{{ v('stipend', i.stipend if i) }}" placeholder="Unpaid"></div>
+        <div class="col-6"><label class="form-label" for="deadline">Deadline</label><input type="date" class="form-control" id="deadline" name="deadline" value="{{ v('deadline', i.deadline.isoformat() if i and i.deadline) }}"></div>
+      </div></div>
+      <div class="card mb-3"><div class="card-header">Hard eligibility (optional)</div><div class="card-body row g-3">
+        <p class="small text-muted mb-0">Leave blank to keep the internship open to everyone. Only these rules can make a student ineligible.</p>
+        <div class="col-6"><label class="form-label" for="min_cgpa">Min CGPA</label><input type="number" step="0.1" min="0" max="10" class="form-control" id="min_cgpa" name="min_cgpa" value="{{ v('min_cgpa', i.min_cgpa if i) }}"></div>
+        <div class="col-6"><label class="form-label" for="eligible_years">Years</label><input class="form-control" id="eligible_years" name="eligible_years" placeholder="3,4" value="{{ v('eligible_years', i.eligible_years if i) }}"></div>
+        <div class="col-12"><label class="form-label" for="eligible_departments">Departments</label><input class="form-control" id="eligible_departments" name="eligible_departments" placeholder="Computer Science, Information Technology" value="{{ v('eligible_departments', i.eligible_departments if i) }}"></div>
+      </div></div>
+      <div class="d-grid gap-2">
+        {% if not i %}<button class="btn btn-accent" type="submit" name="publish" value="1"><i class="bi bi-send me-1"></i>Save & publish</button>{% endif %}
+        <button class="btn btn-primary" type="submit">{{ 'Save changes' if i else 'Save as draft' }}</button>
+      </div>
+    </div>
+  </div>
+</form>
+{% endblock %}

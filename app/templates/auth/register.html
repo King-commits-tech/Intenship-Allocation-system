@@ -1,0 +1,53 @@
+{% extends "public.html" %}
+{% block title %}Create account{% endblock %}
+{% block public_content %}
+<div class="auth-wrap">
+  <div class="auth-card" style="max-width:520px">
+    {% include "partials/flash.html" %}
+    <div class="card p-4 shadow-sm">
+      <h1 class="h3 mb-3">Create your account</h1>
+      <div class="btn-group w-100 mb-4" role="group" aria-label="Account type">
+        <a href="{{ url_for('auth.register', role='student') }}" class="btn {{ 'btn-primary' if role == 'student' else 'btn-outline-primary' }}"><i class="bi bi-mortarboard me-1"></i>Student</a>
+        <a href="{{ url_for('auth.register', role='company') }}" class="btn {{ 'btn-primary' if role == 'company' else 'btn-outline-primary' }}"><i class="bi bi-building me-1"></i>Recruiter</a>
+      </div>
+      <form method="post" class="needs-validation" novalidate>
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <input type="hidden" name="role" value="{{ role }}">
+        <div class="mb-3">
+          <label for="name" class="form-label">{{ 'Your full name' if role == 'student' else 'Contact person' }}</label>
+          <input class="form-control" id="name" name="name" value="{{ form.name or '' }}" required minlength="2" maxlength="120">
+          <div class="invalid-feedback">Name is required.</div>
+        </div>
+        {% if role == 'company' %}
+        <div class="row g-3 mb-3">
+          <div class="col-sm-7"><label for="company_name" class="form-label">Company name</label>
+            <input class="form-control" id="company_name" name="company_name" value="{{ form.company_name or '' }}" required minlength="2" maxlength="150">
+            <div class="invalid-feedback">Company name is required.</div></div>
+          <div class="col-sm-5"><label for="industry" class="form-label">Industry <span class="text-muted fw-normal">(optional)</span></label>
+            <input class="form-control" id="industry" name="industry" value="{{ form.industry or '' }}" maxlength="80"></div>
+        </div>
+        {% else %}
+        <div class="mb-3"><label for="department" class="form-label">Department <span class="text-muted fw-normal">(optional)</span></label>
+          <input class="form-control" id="department" name="department" value="{{ form.department or '' }}" maxlength="80" placeholder="e.g. Computer Science"></div>
+        {% endif %}
+        <div class="mb-3">
+          <label for="email" class="form-label">Email</label>
+          <input type="email" class="form-control" id="email" name="email" value="{{ form.email or '' }}" required autocomplete="email">
+          <div class="invalid-feedback">Enter a valid email.</div>
+        </div>
+        <div class="row g-3 mb-3">
+          <div class="col-sm-6"><label for="password" class="form-label">Password</label>
+            <input type="password" class="form-control" id="password" name="password" required minlength="8" autocomplete="new-password" aria-describedby="pwHelp">
+            <div class="invalid-feedback">At least 8 characters.</div></div>
+          <div class="col-sm-6"><label for="confirm_password" class="form-label">Confirm password</label>
+            <input type="password" class="form-control" id="confirm_password" name="confirm_password" required minlength="8" autocomplete="new-password"></div>
+          <div id="pwHelp" class="form-text mt-1">Use 8+ characters with letters and numbers.</div>
+        </div>
+        {% if role == 'company' %}<div class="alert alert-info small py-2">Recruiter accounts are verified by the college placement cell before internships can be published.</div>{% endif %}
+        <button class="btn btn-primary w-100" type="submit" data-loading-text="Creating account…">Create account</button>
+      </form>
+      <p class="small text-center mt-3 mb-0">Already registered? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty, csrf, score_ring with context %}
+{% block title %}My applications{% endblock %}
+{% block page_title %}My applications{% endblock %}
+{% block content %}
+{% if apps %}
+<p class="small text-muted">Order matters: preference #1 is the internship you want most. You can change preferences while an application is pending.</p>
+<div class="vstack gap-3">
+  {% for a in apps %}
+  {% set steps = ['submitted', 'shortlisted', 'selected', 'allocated'] %}
+  <div class="card p-3">
+    <div class="d-flex flex-wrap gap-3 align-items-center">
+      {{ score_ring(scores.get(a.id, 0), 52) }}
+      <div class="flex-grow-1 min-w-0">
+        <div class="company">{{ a.internship.company.company_name }}</div>
+        <a class="fw-bold" href="{{ url_for('student.internship_detail', iid=a.internship_id) }}">{{ a.internship.title }}</a>
+        <div class="small text-muted">Applied {{ a.created_at|dt }} · updated {{ a.updated_at|dt }}</div>
+        {% if a.reviewer_note %}<div class="small mt-1"><i class="bi bi-chat-left-text me-1"></i>{{ a.reviewer_note }}</div>{% endif %}
+      </div>
+      <div class="text-end">{{ status_badge(a.status) }}</div>
+    </div>
+    <div class="d-flex flex-wrap gap-3 mt-3">
+      {% if a.status in ['rejected', 'withdrawn'] %}
+        <div class="timeline-step done"><span class="dot"></span>Submitted</div>
+        <div class="timeline-step bad"><span class="dot"></span>{{ a.status|title }}</div>
+      {% else %}
+        {% set idx = steps.index(a.status) %}
+        {% for s in steps %}<div class="timeline-step {{ 'done' if loop.index0 <= idx }}"><span class="dot"></span>{{ s|title }}</div>{% endfor %}
+      {% endif %}
+    </div>
+    {% if a.status in ['submitted', 'shortlisted', 'selected'] %}
+    <div class="d-flex flex-wrap gap-2 mt-3 align-items-center">
+      <form method="post" action="{{ url_for('student.set_preference', aid=a.id) }}" class="d-flex gap-2 align-items-center">
+        {{ csrf() }}
+        <label for="pref{{ a.id }}" class="small text-muted">Preference</label>
+        <input type="number" min="1" max="50" class="form-control form-control-sm" style="width:80px" id="pref{{ a.id }}" name="preference_rank" value="{{ a.preference_rank }}">
+        <button class="btn btn-sm btn-outline-primary" type="submit" data-no-loading>Update</button>
+      </form>
+      <form method="post" action="{{ url_for('student.withdraw', aid=a.id) }}" class="ms-auto" data-confirm="Withdraw your application for {{ a.internship.title }}? This cannot be undone by you.">
+        {{ csrf() }}<button class="btn btn-sm btn-outline-danger" type="submit">Withdraw</button></form>
+    </div>
+    {% endif %}
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+  <div class="card">{{ empty('bi-send', 'No applications yet', 'Browse internships and apply to the ones that match you best.', url_for('student.recommendations'), 'See recommendations') }}</div>
+{% endif %}
+{% endblock %}

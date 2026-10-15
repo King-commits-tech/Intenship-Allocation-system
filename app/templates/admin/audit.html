@@ -1,0 +1,16 @@
+{% extends "layout.html" %}
+{% from "partials/macros.html" import empty, pager with context %}
+{% block title %}Audit log{% endblock %}
+{% block page_title %}Audit log{% endblock %}
+{% block content %}
+<form class="card p-3 mb-3 d-flex flex-row gap-2 align-items-end" method="get" role="search">
+  <div class="flex-grow-1"><label class="form-label small" for="action">Filter by action</label><input class="form-control" id="action" name="action" value="{{ request.args.get('action', '') }}" placeholder="e.g. allocation, company.verify"></div>
+  <button class="btn btn-primary" type="submit" data-no-loading>Filter</button>
+</form>
+{% if pagination.items %}
+<div class="card"><div class="table-responsive"><table class="table align-middle mb-0 small">
+  <thead><tr><th>Time (UTC)</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th><th>IP</th></tr></thead>
+  <tbody>{% for l in pagination.items %}<tr><td class="text-nowrap">{{ l.created_at|dt }}</td><td>{{ l.user.name if l.user else 'system' }}</td><td><code>{{ l.action }}</code></td><td>{{ l.entity_type or '' }}{{ ' #' ~ l.entity_id if l.entity_id }}</td><td>{{ l.details or '' }}</td><td>{{ l.ip_address or '' }}</td></tr>{% endfor %}</tbody></table></div></div>
+{{ pager(pagination.page, pagination.pages) }}
+{% else %}<div class="card">{{ empty('bi-shield-check', 'No audit entries') }}</div>{% endif %}
+{% endblock %}

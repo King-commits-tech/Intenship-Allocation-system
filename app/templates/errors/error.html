@@ -1,0 +1,12 @@
+{% extends "public.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block public_content %}
+<div class="auth-wrap">
+  <div class="text-center">
+    <div class="display-1 fw-bold" style="color:var(--saffron)">{{ code }}</div>
+    <h1 class="h3">{{ title }}</h1>
+    <p class="text-muted">{{ message }}</p>
+    <a href="{{ url_for('main.dashboard') if current_user.is_authenticated else url_for('main.index') }}" class="btn btn-primary">Back to safety</a>
+  </div>
+</div>
+{% endblock %}
